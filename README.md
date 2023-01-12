@@ -156,6 +156,11 @@ ExecutorService executorService = Executors.newFixedThreadPool(10);
 DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
     .withExecutor(executorService)
     .execute();
+
+// run on current thread
+DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
+    .withExecutor(Runnable::run)
+    .execute();
 ```
 
 ## Combining database actions
