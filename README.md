@@ -123,6 +123,10 @@ They can also be mapped to objects with the `ParseField` annotation:
 User user = DatabaseAction.of("SELECT id, username FROM users WHERE id=?", 154)
     .query(Mapper.toObject(User.class))
     .join();
+
+List<User> users = DatabaseAction.of("SELECT id, username FROM users WHERE username=?", "username")
+    .query(Mapper.toObjects(User.class))
+    .join();
 ```
 
 Given the following class:

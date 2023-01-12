@@ -69,6 +69,10 @@ public interface Mapper<T> extends Function<Table, T> {
         return new ObjectMapper<>(clazz);
     }
 
+    static <T> @NotNull Mapper<List<T>> toObjects(Class<T> clazz) {
+        return t -> new ObjectMapper<>(clazz).applyAll(t);
+    }
+
     @Contract(pure = true)
     static @NotNull Mapper<Tuple> firstRow() {
         return table -> {
