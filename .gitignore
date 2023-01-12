@@ -1,3 +1,6 @@
+### Config credentials ###
+/src/main/resources/config.cfg
+
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
