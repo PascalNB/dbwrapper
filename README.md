@@ -1,6 +1,11 @@
 # dbwrapper
 
 A wrapper to quickly make database queries with asynchronous callbacks.
+1. [Setup](#setup)
+2. [Querying](#querying)
+3. [Executing](#executing)
+4. [Custom Executor](#custom-executor)
+5. [Combining Database Actions](#combining-database-actions)
 
 ## Setup
 
