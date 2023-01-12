@@ -1,5 +1,8 @@
 package com.pascalnb.dbwrapper;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,25 +10,23 @@ import java.util.function.Function;
 
 public interface Mapper<T> extends Function<Table, T> {
 
-    static Mapper<String> stringValue() {
+    static @NotNull Mapper<String> stringValue() {
         return singleValue(Function.identity());
     }
 
-    static <T> Mapper<T> singleValue(Function<String, T> mapper) {
+    @Contract(pure = true)
+    static <T> @NotNull Mapper<T> singleValue(Function<String, T> mapper) {
         return table -> table.isEmpty()
             ? null
             : mapper.apply(table.getRow(0).get(0));
     }
 
-    static Mapper<List<String>> stringList() {
+    static @NotNull Mapper<List<String>> stringList() {
         return valueList(Function.identity());
     }
 
-    static Mapper<List<Tuple>> tupleList() {
-        return Table::getTuples;
-    }
-
-    static <T> Mapper<List<T>> valueList(Function<String, T> mapper) {
+    @Contract(pure = true)
+    static <T> @NotNull Mapper<List<T>> valueList(Function<String, T> mapper) {
         return table -> {
             if (table.isEmpty()) {
                 return List.of();
@@ -38,29 +39,43 @@ public interface Mapper<T> extends Function<Table, T> {
         };
     }
 
-    static <T> Mapper<T> fromFunction(Function<Table, T> function) {
+    @Contract(pure = true)
+    static <T> @NotNull Mapper<T> fromFunction(@NotNull Function<Table, T> function) {
         return function::apply;
     }
 
-    static Mapper<Table> identity() {
+    @Contract(pure = true)
+    static @NotNull Mapper<Table> identity() {
         return t -> t;
     }
 
-    static Mapper<StringMapping> toMapping() {
+    @Contract(pure = true)
+    static @NotNull Mapper<StringMapping> toMapping() {
         return singleValue(StringMapping::of);
     }
 
-    static <T> Mapper<T> to(Class<T> clazz) {
+    @Contract(pure = true)
+    static <T> @NotNull Mapper<T> toPrimitive(Class<T> clazz) {
         return t -> toMapping().andThen(s -> s.as(clazz)).apply(t);
     }
 
-    static Mapper<Tuple> firstRow() {
+    static <T> @NotNull Mapper<T> toObject(Class<T> clazz) {
+        return new ObjectMapper<>(clazz);
+    }
+
+    @Contract(pure = true)
+    static @NotNull Mapper<Tuple> firstRow() {
         return table -> {
             if (table.isEmpty()) {
                 return null;
             }
             return table.getRow(0);
         };
+    }
+
+    @Contract(pure = true)
+    static @NotNull Mapper<List<Tuple>> allRows() {
+        return Table::getTuples;
     }
 
 }

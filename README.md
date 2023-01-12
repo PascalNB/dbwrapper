@@ -4,8 +4,9 @@ A wrapper to quickly make database queries with asynchronous callbacks.
 1. [Setup](#setup)
 2. [Querying](#querying)
 3. [Executing](#executing)
-4. [Custom Executor](#custom-executor)
-5. [Combining Database Actions](#combining-database-actions)
+4. [Value Mapping](#value-mapping)
+5. [Custom Executor](#custom-executor)
+6. [Combining Database Actions](#combining-database-actions)
 
 ## Setup
 
@@ -73,14 +74,6 @@ DatabaseAction.of("SELECT * FROM users WHERE id=?;", 154)
     });
 ```
 
-Values can be mapped to primitives:
-
-```java
-int count = DatabaseAction.of("SELECT count(*) FROM users")
-    .query(Mapper.to(Integer.class))
-    .join();
-```
-
 ## Executing
 
 Executing without response:
@@ -88,6 +81,53 @@ Executing without response:
 ```java
 DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
     .execute();
+```
+
+## Value Mapping
+
+Returned values can be mapped to primitives:
+
+```java
+int count = DatabaseAction.of("SELECT count(*) FROM users")
+    .query(Mapper.toPrimitive(Integer.class))
+    .join();
+```
+
+They can also be mapped to objects with the `ParseField` annotation:
+
+```java
+User user = DatabaseAction.of("SELECT id, username FROM users WHERE id=?", 154)
+    .query(Mapper.toObject(User.class))
+    .join();
+```
+
+Given the following class:
+
+```java
+public class User {
+
+    @ParseField // annotate with ParseField
+    private int id;
+
+    @ParseField("username") // specifiy different name
+    private String name;
+
+    public User() {} // constructor without arguments required
+
+    public User(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+}
 ```
 
 ## Custom executor
