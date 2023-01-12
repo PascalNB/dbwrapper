@@ -10,7 +10,7 @@ A wrapper to quickly make database queries with asynchronous callbacks.
 
 ## Setup
 
-Add jitpack dependency:
+Add jitpack repository:
 
 ```xml
 <repositories>
@@ -21,7 +21,7 @@ Add jitpack dependency:
 </repositories>
 ```
 
-Add dbwrapper to project:
+Add dbwrapper dependency to project:
 
 ```xml
 <dependency>

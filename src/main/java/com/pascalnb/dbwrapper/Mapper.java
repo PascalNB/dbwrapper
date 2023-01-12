@@ -78,4 +78,11 @@ public interface Mapper<T> extends Function<Table, T> {
         return Table::getTuples;
     }
 
+    default Mapper<T> orDefault(T defaultValue) {
+        return table -> {
+            T t = this.apply(table);
+            return t == null ? defaultValue : t;
+        };
+    }
+
 }
