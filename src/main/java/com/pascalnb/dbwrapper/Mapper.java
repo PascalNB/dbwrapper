@@ -84,7 +84,7 @@ public interface Mapper<T> extends Function<Table, T> {
         return Table::getTuples;
     }
 
-    default Mapper<T> orDefault(Object defaultValue) {
+    default Mapper<T> orDefault(Object defaultValue) throws ClassCastException {
         return table -> {
             T t = this.apply(table);
             if (t == null) {
