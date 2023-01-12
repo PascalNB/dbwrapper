@@ -88,6 +88,7 @@ public interface Mapper<T> extends Function<Table, T> {
         return Table::getTuples;
     }
 
+    @SuppressWarnings("unchecked")
     default Mapper<T> orDefault(Object defaultValue) throws ClassCastException {
         return table -> {
             T t = this.apply(table);
@@ -95,7 +96,6 @@ public interface Mapper<T> extends Function<Table, T> {
                 if (defaultValue == null) {
                     return null;
                 }
-                //noinspection unchecked
                 return (T) defaultValue;
             }
             return t;
