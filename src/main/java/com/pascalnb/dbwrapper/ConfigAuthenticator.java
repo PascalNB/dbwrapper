@@ -14,7 +14,7 @@ class ConfigAuthenticator extends DatabaseAuthenticator {
     /**
      * Returns the database credentials from the credentials file.
      */
-    public String[] getCredentials() {
+    protected String[] getCredentials() {
         Properties properties = new Properties();
         try {
             File jarPath = new File(getClass().getProtectionDomain()

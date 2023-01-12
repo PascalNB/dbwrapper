@@ -12,8 +12,7 @@ import java.util.function.Supplier;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public abstract class Database {
 
-    @SuppressWarnings("StaticInitializerReferencesSubClass")
-    private static final Supplier<Database> implementation = JDBC::new;
+    private static Supplier<Database> implementation;
 
     protected static String url = null;
     protected static String username = null;
@@ -54,7 +53,14 @@ public abstract class Database {
         if (url == null) {
             DatabaseAuthenticator.getInstance().authenticate();
         }
+        if (implementation == null) {
+            implementation = JDBC::new;
+        }
         return implementation.get();
+    }
+
+    public static void setImplementation(Supplier<Database> supplier) {
+        implementation = supplier;
     }
 
     /**

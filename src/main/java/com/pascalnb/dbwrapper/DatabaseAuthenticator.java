@@ -1,5 +1,7 @@
 package com.pascalnb.dbwrapper;
 
+import java.util.function.Supplier;
+
 /**
  * Abstract singleton that is used to get the database credentials and set up the database
  * connection. Requires an implementation that extends {@link DatabaseAuthenticator}.
@@ -7,12 +9,24 @@ package com.pascalnb.dbwrapper;
 abstract class DatabaseAuthenticator {
 
     private static DatabaseAuthenticator instance;
+    private static Supplier<DatabaseAuthenticator> supplier;
 
     public static DatabaseAuthenticator getInstance() {
         if (instance == null) {
-            instance = new ConfigAuthenticator();
+            if (supplier == null) {
+                supplier = ConfigAuthenticator::new;
+            }
+            instance = supplier.get();
         }
         return instance;
+    }
+
+    public static void setSupplier(Supplier<DatabaseAuthenticator> supplier) {
+        DatabaseAuthenticator.supplier = supplier;
+    }
+
+    public static void invalidate() {
+        instance = null;
     }
 
     /**
@@ -36,6 +50,6 @@ abstract class DatabaseAuthenticator {
      *
      * @return the credentials
      */
-    public abstract String[] getCredentials();
+    protected abstract String[] getCredentials();
 
 }
