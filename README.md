@@ -142,13 +142,13 @@ Database actions can be combined as follows:
 
 ```java
 DatabaseAction.allOf(
-        Mapper.to(Long.class),
+        Mapper.toPrimitive(Long.class),
         DatabaseAction.of("SELECT count(*) FROM users WHERE id=?;", 154),
         DatabaseAction.of("SELECT count(*) FROM users WHERE username=?;", "username")
     )
     .query()
     .thenAccept(counts -> {
-        for (long count : counts){
+        for (long count : counts) {
             // do stuff
         }
     });
