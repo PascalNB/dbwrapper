@@ -31,7 +31,7 @@ Add dbwrapper dependency to project:
 </dependency>
 ```
 
-Add ``config.cfg`` containing database credentials, url and JDBC driver as resource or the in the folder the jar is contained in:
+Add ``config.cfg`` containing the database credentials, connection URL and JDBC driver as resource or the in the folder the jar is contained in:
 
 ```properties
 username="<username>"
@@ -42,7 +42,7 @@ driver="<driver class>"
 
 Or set a custom way to authenticate the database:
 
-```
+```java
 DatabaseAuthenticator.setImplementation(CustomAuthenticator::new);
 ```
 
