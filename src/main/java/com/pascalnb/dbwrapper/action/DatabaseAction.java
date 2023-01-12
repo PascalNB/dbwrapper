@@ -35,7 +35,7 @@ public interface DatabaseAction<T> {
     @NotNull
     @Contract(value = "_, _ -> new", pure = true)
     static DatabaseAction<Table> of(String query, Object... args) {
-        return of(Query.of(query, args), Mapper.identity());
+        return of(new Query(query, args), Mapper.identity());
     }
 
     @NotNull

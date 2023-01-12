@@ -80,6 +80,22 @@ DatabaseAction.of("SELECT * FROM users WHERE id=?;", 154)
     });
 ```
 
+Reusing existing queries with different arguments:
+
+```java
+Query query = new Query("SELECT * FROM users WHERE id=?;");
+DatabaseAction.of(query.withArgs(154))
+    .query(Mapper.firstRow())
+    .thenAccept(row -> {
+        // do stuff
+    });
+DatabaseAction.of(query.withArgs(451))
+    .query(Mapper.firstRow())
+    .thenAccept(row -> {
+        // do stuff
+    });
+```
+
 ## Executing
 
 Executing without response:
@@ -144,17 +160,19 @@ DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
 
 ## Combining database actions
 
-Database actions can be combined as follows:
+Multiple database actions can be combined as follows:
 
 ```java
+Query query = new Query("SELECT * FROM users WHERE id=?")
 DatabaseAction.allOf(
-        Mapper.toPrimitive(Long.class),
-        DatabaseAction.of("SELECT count(*) FROM users WHERE id=?;", 154),
-        DatabaseAction.of("SELECT count(*) FROM users WHERE username=?;", "username")
+        Mapper.toObject(User.class),
+        DatabaseAction.of(query.withArgs(154)),
+        DatabaseAction.of(query.withArgs(541)),
+        DatabaseAction.of("SELECT * FROM users WHERE username=?;", "username")
     )
     .query()
-    .thenAccept(counts -> {
-        for (long count : counts) {
+    .thenAccept(list -> {
+        for (User user : list) {
             // do stuff
         }
     });
