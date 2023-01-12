@@ -6,7 +6,7 @@ import java.util.function.Supplier;
  * Abstract singleton that is used to get the database credentials and set up the database
  * connection. Requires an implementation that extends {@link DatabaseAuthenticator}.
  */
-abstract class DatabaseAuthenticator {
+public abstract class DatabaseAuthenticator {
 
     private static DatabaseAuthenticator instance;
     private static Supplier<DatabaseAuthenticator> supplier;
@@ -21,12 +21,15 @@ abstract class DatabaseAuthenticator {
         return instance;
     }
 
-    public static void setSupplier(Supplier<DatabaseAuthenticator> supplier) {
+    public static void setImplementation(Supplier<DatabaseAuthenticator> supplier) {
         DatabaseAuthenticator.supplier = supplier;
     }
 
     public static void invalidate() {
         instance = null;
+        Database.setUsername(null);
+        Database.setPassword(null);
+        Database.setUrl(null);
     }
 
     /**
