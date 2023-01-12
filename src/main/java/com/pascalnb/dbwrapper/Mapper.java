@@ -21,6 +21,12 @@ public interface Mapper<T> extends Function<Table, T> {
             : mapper.apply(table.getRow(0).get(0));
     }
 
+    static <T> @NotNull Mapper<T> singleNullableValue(Function<String, T> mapper) {
+        return table -> table.isEmpty()
+            ? mapper.apply(null)
+            : mapper.apply(table.getRow(0).get(0));
+    }
+
     static @NotNull Mapper<List<String>> stringList() {
         return valueList(Function.identity());
     }
@@ -51,12 +57,12 @@ public interface Mapper<T> extends Function<Table, T> {
 
     @Contract(pure = true)
     static @NotNull Mapper<StringMapping> toMapping() {
-        return singleValue(StringMapping::of);
+        return singleNullableValue(StringMapping::of);
     }
 
     @Contract(pure = true)
-    static <T> @NotNull Mapper<T> toPrimitive(Class<T> clazz) {
-        return t -> toMapping().andThen(s -> s.as(clazz)).apply(t);
+    static <T> @NotNull Mapper<T> toPrimitive(Class<? extends T> clazz) {
+        return t -> toMapping().apply(t).as(clazz);
     }
 
     static <T> @NotNull Mapper<T> toObject(Class<T> clazz) {
@@ -78,10 +84,17 @@ public interface Mapper<T> extends Function<Table, T> {
         return Table::getTuples;
     }
 
-    default Mapper<T> orDefault(T defaultValue) {
+    default Mapper<T> orDefault(Object defaultValue) {
         return table -> {
             T t = this.apply(table);
-            return t == null ? defaultValue : t;
+            if (t == null) {
+                if (defaultValue == null) {
+                    return null;
+                }
+                //noinspection unchecked
+                return (T) defaultValue;
+            }
+            return t;
         };
     }
 

@@ -17,10 +17,6 @@ public class Table implements Iterable<Tuple> {
     private final List<Tuple> tuples;
     private final Map<String, Integer> index;
 
-    public Table(String... attributes) {
-        this(attributes, new ArrayList<>());
-    }
-
     /**
      * Creates a new query result with the given attribute names and values.
      *
