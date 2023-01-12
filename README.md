@@ -89,7 +89,7 @@ Returned values can be mapped to primitives:
 
 ```java
 int count = DatabaseAction.of("SELECT count(*) FROM users")
-    .query(Mapper.toPrimitive(Integer.class))
+    .query(Mapper.toPrimitive(Integer.class)) // or Integer.TYPE
     .join();
 ```
 
@@ -113,11 +113,6 @@ public class User {
     private String name;
 
     public User() {} // constructor without arguments required
-
-    public User(int id, String name) {
-        this.id = id;
-        this.name = name;
-    }
 
     public int getId() {
         return id;
