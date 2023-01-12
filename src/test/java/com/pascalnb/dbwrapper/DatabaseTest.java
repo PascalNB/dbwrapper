@@ -4,9 +4,6 @@ import com.pascalnb.dbwrapper.action.DatabaseAction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 public class DatabaseTest {
 
     @Test
@@ -22,12 +19,6 @@ public class DatabaseTest {
                 .thenAccept(System.out::println)
                 .join();
         });
-
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
-        DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
-            .withExecutor(executorService)
-            .execute();
-
     }
 
 }
