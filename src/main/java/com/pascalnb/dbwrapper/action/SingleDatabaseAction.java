@@ -1,8 +1,8 @@
-package com.pascalnb.dbwrapper.database.action;
+package com.pascalnb.dbwrapper.action;
 
-import com.pascalnb.dbwrapper.database.Database;
-import com.pascalnb.dbwrapper.database.Query;
-import com.pascalnb.dbwrapper.database.Table;
+import com.pascalnb.dbwrapper.Database;
+import com.pascalnb.dbwrapper.Query;
+import com.pascalnb.dbwrapper.Table;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;

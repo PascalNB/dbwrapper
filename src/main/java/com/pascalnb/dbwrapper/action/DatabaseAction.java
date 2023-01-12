@@ -1,7 +1,7 @@
-package com.pascalnb.dbwrapper.database.action;
+package com.pascalnb.dbwrapper.action;
 
-import com.pascalnb.dbwrapper.database.Query;
-import com.pascalnb.dbwrapper.database.Table;
+import com.pascalnb.dbwrapper.Query;
+import com.pascalnb.dbwrapper.Table;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 

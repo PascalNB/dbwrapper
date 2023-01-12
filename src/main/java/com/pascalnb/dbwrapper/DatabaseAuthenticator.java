@@ -1,4 +1,4 @@
-package com.pascalnb.dbwrapper.database;
+package com.pascalnb.dbwrapper;
 
 /**
  * Abstract singleton that is used to get the database credentials and set up the database

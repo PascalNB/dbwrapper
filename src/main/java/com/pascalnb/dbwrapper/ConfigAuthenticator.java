@@ -1,4 +1,4 @@
-package com.pascalnb.dbwrapper.database;
+package com.pascalnb.dbwrapper;
 
 import java.io.*;
 import java.util.Properties;

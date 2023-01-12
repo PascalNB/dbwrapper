@@ -1,4 +1,4 @@
-package com.pascalnb.dbwrapper.database;
+package com.pascalnb.dbwrapper;
 
 public class DatabaseException extends RuntimeException {
 

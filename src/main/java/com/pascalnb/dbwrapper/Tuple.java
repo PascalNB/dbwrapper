@@ -1,4 +1,4 @@
-package com.pascalnb.dbwrapper.database;
+package com.pascalnb.dbwrapper;
 
 /**
  * Interface that specifies a tuple with string values. The values are to be retrieved

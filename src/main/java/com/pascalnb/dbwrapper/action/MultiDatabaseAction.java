@@ -1,4 +1,4 @@
-package com.pascalnb.dbwrapper.database.action;
+package com.pascalnb.dbwrapper.action;
 
 import java.util.ArrayList;
 import java.util.Collection;
