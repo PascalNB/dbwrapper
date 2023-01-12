@@ -34,10 +34,12 @@ Add dbwrapper dependency to project:
 Add ``config.cfg`` containing the database credentials, connection URL and JDBC driver as resource or the in the folder the jar is contained in:
 
 ```properties
-username="<username>"
-password="<password>"
-url="jdbc:<driver>://<host>:<port>/<database>"
-driver="<driver class>"
+username=<username>
+password=<password>
+# e.g. jdbc:mysql://localhost:3306/database
+url=jdbc:<driver>://<host>:<port>/<database>
+# e.g. com.mysql.cj.jdbc.Driver
+driver=<driver class>
 ```
 
 Or set a custom way to authenticate the database:
