@@ -172,32 +172,28 @@ class JDBC extends Database {
     // specific implementation to parse a ResultSet to a Table
     @Contract(value = "_ -> new")
     private static Table parseResult(@NotNull ResultSet resultSet) {
-        String[] attributes;
-        List<Tuple> tuples = new ArrayList<>();
-        Table table;
         try {
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();
-            attributes = new String[columnCount];
+            String[] attributes = new String[columnCount];
             for (int i = 0; i < columnCount; i++) {
                 attributes[i] = metaData.getColumnName(i + 1);
             }
 
-            table = new Table(attributes);
-
+            List<String[]> tuples = new ArrayList<>();
             while (resultSet.next()) {
                 String[] tuple = new String[columnCount];
                 for (int i = 0; i < columnCount; i++) {
                     tuple[i] = resultSet.getString(i + 1);
                 }
-                table.addRow(tuple);
+                tuples.add(tuple);
             }
+
+            return new Table(attributes, tuples);
 
         } catch (SQLException e) {
             throw new DatabaseException(e);
         }
-
-        return table;
     }
 
 }

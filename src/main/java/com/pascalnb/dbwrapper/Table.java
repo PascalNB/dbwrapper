@@ -11,7 +11,7 @@ import java.util.function.Consumer;
  * All query consumers accept this data type.
  * Any implementation of Database should create a Table for each query.
  */
-public class Table {
+public class Table implements Iterable<Tuple> {
 
     private final String[] attributes;
     private final List<Tuple> tuples;
@@ -29,17 +29,13 @@ public class Table {
      */
     public Table(@NotNull String[] attributes, List<String[]> tuples) {
         this.attributes = attributes;
-        this.tuples = new ArrayList<>();
+        List<Tuple> list = new ArrayList<>();
         index = new HashMap<>();
         for (int i = 0; i < attributes.length; i++) {
             index.put(attributes[i], i);
         }
-        tuples.forEach(t -> this.tuples.add(new Row(t)));
-    }
-
-    public Table addRow(String... cells) {
-        tuples.add(new Row(cells));
-        return this;
+        tuples.forEach(t -> list.add(new Row(t)));
+        this.tuples = Collections.unmodifiableList(list);
     }
 
     /**
@@ -105,7 +101,8 @@ public class Table {
      *
      * @param consumer the consumer that accepts the row
      */
-    public void forEach(Consumer<Tuple> consumer) {
+    @Override
+    public void forEach(Consumer<? super Tuple> consumer) {
         for (Tuple tuple : tuples) {
             consumer.accept(tuple);
         }
@@ -149,6 +146,12 @@ public class Table {
      */
     public int getColumnCount() {
         return attributes.length;
+    }
+
+    @NotNull
+    @Override
+    public Iterator<Tuple> iterator() {
+        return tuples.iterator();
     }
 
     private class Row implements Tuple {
