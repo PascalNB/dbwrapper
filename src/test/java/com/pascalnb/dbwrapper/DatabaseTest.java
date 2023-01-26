@@ -33,8 +33,11 @@ public class DatabaseTest {
             )
             .execute()
             .join();
-        List<Parsable> parsables = DatabaseAction.of("SELECT * FROM test_table")
-            .query(Mapper.toObjects(Parsable.class))
+        List<Parsable> parsables = DatabaseAction.allOf(
+                Mapper.toObjects(Parsable.class),
+                DatabaseAction.of("SELECT * FROM test_table")
+            )
+            .query(l -> l.get(0))
             .join();
         DatabaseAction.of("DROP TABLE test_table")
             .execute();

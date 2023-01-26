@@ -57,5 +57,13 @@ public class SingleDatabaseAction<T> implements DatabaseAction<T> {
         return new SingleDatabaseAction<>(query, mapper, executor);
     }
 
+    protected Function<Table, T> getMapper() {
+        return mapper;
+    }
+
+    protected Query getQuery() {
+        return query;
+    }
+
 }
 
