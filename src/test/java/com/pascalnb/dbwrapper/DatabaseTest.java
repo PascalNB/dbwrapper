@@ -5,6 +5,8 @@ import com.pascalnb.dbwrapper.annotation.ParseField;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 public class DatabaseTest {
 
     @Test
@@ -26,15 +28,18 @@ public class DatabaseTest {
     public void testObjectMapping() {
         DatabaseAction.allOf(
                 DatabaseAction.of("CREATE TABLE IF NOT EXISTS test_table (id INT, text TEXT)"),
-                DatabaseAction.of("INSERT INTO test_table VALUES (?, ?)", 12, "test")
+                DatabaseAction.of("INSERT INTO test_table VALUES (?, ?)", 12, "test"),
+                DatabaseAction.of("INSERT INTO test_table VALUES (?, ?)", 12, null)
             )
             .execute()
             .join();
-        Parsable parsable = DatabaseAction.of("SELECT * FROM test_table")
-            .query(Mapper.toObject(Parsable.class))
+        List<Parsable> parsables = DatabaseAction.of("SELECT * FROM test_table")
+            .query(Mapper.toObjects(Parsable.class))
             .join();
         DatabaseAction.of("DROP TABLE test_table")
             .execute();
+        System.out.println(parsables);
+        Parsable parsable = parsables.get(0);
         Assertions.assertEquals(12, parsable.getId());
         Assertions.assertEquals("test", parsable.getValue());
         Assertions.assertNull(parsable.getTest());
@@ -57,6 +62,11 @@ public class DatabaseTest {
 
         public String getTest() {
             return test;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + id + ", " + value + ", " + test + "]";
         }
 
     }

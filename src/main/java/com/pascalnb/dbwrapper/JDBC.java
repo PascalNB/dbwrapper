@@ -85,6 +85,11 @@ class JDBC extends Database {
                 Object variable = variables[i];
                 int index = i + 1;
 
+                if (variable == null) {
+                    statement.setObject(index, null);
+                    continue;
+                }
+
                 if (variable instanceof Integer) {
                     statement.setInt(index, (int) variable);
                 } else if (variable instanceof Double) {
