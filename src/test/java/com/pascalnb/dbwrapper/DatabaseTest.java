@@ -40,6 +40,7 @@ public class DatabaseTest {
         Assertions.assertNull(parsable.getTest());
     }
 
+    @SuppressWarnings("unused")
     private static class Parsable {
 
         @ParseField private int id;

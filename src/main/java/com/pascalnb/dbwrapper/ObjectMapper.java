@@ -63,7 +63,7 @@ public class ObjectMapper<T> implements Mapper<T> {
                 T instance = constructor.newInstance();
 
                 for (Object[] pair : pairs) {
-                    StringMapping value = StringMapping.of(row.get((String) pair[1]));
+                    StringMapper value = new StringMapper(row.get((String) pair[1]));
                     Field field = (Field) pair[0];
                     Object parsed = value.as(field.getType());
                     field.set(instance, parsed);

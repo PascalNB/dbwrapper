@@ -8,12 +8,16 @@ import java.util.Objects;
 import java.util.function.Function;
 
 @SuppressWarnings("unused")
-public class StringMapping {
+public class StringMapper {
 
     private final String string;
 
-    private StringMapping(@Nullable String string) {
-        this.string = string;
+    public StringMapper(@Nullable Object object) {
+        if (object == null) {
+            this.string = null;
+            return;
+        }
+        this.string = object.toString();
     }
 
     @SuppressWarnings("unchecked")
@@ -90,15 +94,6 @@ public class StringMapping {
 
     public boolean isNull() {
         return string == null;
-    }
-
-    @NotNull
-    @Contract(value = "_ -> new", pure = true)
-    public static StringMapping of(Object object) {
-        if (object == null) {
-            return new StringMapping(null);
-        }
-        return new StringMapping(object.toString());
     }
 
     @Contract(value = "null, _ -> null; !null, _ -> !null", pure = true)
