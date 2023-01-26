@@ -91,6 +91,14 @@ class JDBC extends Database {
                     statement.setDouble(index, (double) variable);
                 } else if (variable instanceof Boolean) {
                     statement.setBoolean(index, (boolean) variable);
+                } else if (variable instanceof Long) {
+                    statement.setLong(index, (long) variable);
+                } else if (variable instanceof Float) {
+                    statement.setFloat(index, (float) variable);
+                } else if (variable instanceof Byte) {
+                    statement.setByte(index, (byte) variable);
+                } else if (variable instanceof Short) {
+                    statement.setShort(index, (short) variable);
                 } else {
                     statement.setString(index, (String) variable);
                 }
