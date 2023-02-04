@@ -1,13 +1,6 @@
-package com.pascalnb.dbwrapper;
+package com.pascalnb.dbwrapper
 
-public class DatabaseException extends RuntimeException {
-
-    public DatabaseException(Throwable e) {
-        super(e);
-    }
-
-    public DatabaseException(String message) {
-        super(message);
-    }
-
+class DatabaseException : RuntimeException {
+    constructor(e: Throwable?) : super(e)
+    constructor(message: String?) : super(message)
 }

@@ -1,52 +1,53 @@
-package com.pascalnb.dbwrapper;
+package com.pascalnb.dbwrapper
 
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.*;
-import java.util.function.Consumer;
+import org.jetbrains.annotations.Contract
+import java.util.*
+import java.util.function.Consumer
 
 /**
  * All query consumers accept this data type.
  * Any implementation of Database should create a Table for each query.
+ *
+ * @param attributes the names of the attributes
+ * @param tuples     the tuples with values
  */
-public class Table implements Iterable<Tuple> {
+class Table(
+    val attributes: Array<String>, tuples: List<Array<String?>>
+) : Iterable<Tuple> {
 
-    private final String[] attributes;
-    private final List<Tuple> tuples;
-    private final Map<String, Integer> index;
+    private val tuples: MutableList<Tuple>
+    private val index: MutableMap<String, Int>
+    private var string: String
 
-    /**
-     * Creates a new query result with the given attribute names and values.
-     *
-     * @param attributes the names of the attributes
-     * @param tuples     the tuples with values
-     */
-    public Table(@NotNull String[] attributes, List<String[]> tuples) {
-        this.attributes = attributes;
-        List<Tuple> list = new ArrayList<>();
-        index = new HashMap<>();
-        for (int i = 0; i < attributes.length; i++) {
-            index.put(attributes[i], i);
+    init {
+        val list: MutableList<Tuple> = ArrayList()
+        index = HashMap()
+
+        for (i in attributes.indices) {
+            index[attributes[i]] = i
         }
-        tuples.forEach(t -> list.add(new Row(t)));
-        this.tuples = Collections.unmodifiableList(list);
-    }
 
-    /**
-     * @return the names of the attributes
-     */
-    public String[] getAttributes() {
-        return attributes;
+        tuples.forEach {
+            list.add(Row(*it))
+        }
+        this.tuples = Collections.unmodifiableList(list)
+
+        val builder = StringBuilder()
+            .append(attributes.joinToString(", "))
+            .append("\n")
+        for (tuple in tuples) {
+            builder.append(tuple.toString())
+        }
+        builder.deleteCharAt(builder.length - 1)
+        this.string = builder.toString()
     }
 
     /**
      * @param index the index of the column
      * @return the attribute name of the column
      */
-    public String getAttribute(int index) {
-        return attributes[index];
+    fun getAttribute(index: Int): String {
+        return attributes[index]
     }
 
     /**
@@ -55,14 +56,12 @@ public class Table implements Iterable<Tuple> {
      * @param index the index of the column
      * @return the column
      */
-    public String[] getColumn(int index) {
-        String[] result = new String[getRowCount()];
-
-        for (int i = 0; i < result.length; i++) {
-            result[i] = tuples.get(i).get(index);
+    fun getColumn(index: Int): Array<String?> {
+        val result = arrayOfNulls<String>(rowCount)
+        for (i in result.indices) {
+            result[i] = tuples[i][index]
         }
-
-        return result;
+        return result
     }
 
     /**
@@ -72,8 +71,8 @@ public class Table implements Iterable<Tuple> {
      * @param attributeName the attribute name
      * @return the index
      */
-    public int indexOf(String attributeName) {
-        return index.getOrDefault(attributeName, -1);
+    fun indexOf(attributeName: String): Int {
+        return index.getOrDefault(attributeName, -1)
     }
 
     /**
@@ -82,14 +81,11 @@ public class Table implements Iterable<Tuple> {
      * @param attributeName the name of the column
      * @return the column
      */
-    public String[] getColumn(String attributeName) {
-        int index = indexOf(attributeName);
-
-        if (index == -1) {
-            return new String[0];
-        }
-
-        return getColumn(index);
+    fun getColumn(attributeName: String): Array<String?> {
+        val index = indexOf(attributeName)
+        return if (index == -1) {
+            arrayOfNulls(0)
+        } else getColumn(index)
     }
 
     /**
@@ -97,10 +93,9 @@ public class Table implements Iterable<Tuple> {
      *
      * @param consumer the consumer that accepts the row
      */
-    @Override
-    public void forEach(Consumer<? super Tuple> consumer) {
-        for (Tuple tuple : tuples) {
-            consumer.accept(tuple);
+    override fun forEach(consumer: Consumer<in Tuple>) {
+        for (tuple in tuples) {
+            consumer.accept(tuple)
         }
     }
 
@@ -109,8 +104,8 @@ public class Table implements Iterable<Tuple> {
      *
      * @return a list of tuples
      */
-    public List<Tuple> getTuples() {
-        return tuples;
+    fun getTuples(): List<Tuple> {
+        return tuples
     }
 
     /**
@@ -119,64 +114,56 @@ public class Table implements Iterable<Tuple> {
      * @param index the index of the row
      * @return an array with the row values
      */
-    public Tuple getRow(int index) {
-        return tuples.get(index);
+    fun getRow(index: Int): Tuple {
+        return tuples[index]
     }
 
-    /**
-     * @return whether the table is empty
-     */
-    public boolean isEmpty() {
-        return getRowCount() == 0;
-    }
+    val isEmpty
+        /**
+         * @return whether the table is empty
+         */
+        get() = rowCount == 0
 
-    /**
-     * @return the row count
-     */
-    public int getRowCount() {
-        return tuples.size();
-    }
+    val rowCount: Int
+        /**
+         * @return the row count
+         */
+        get() = tuples.size
 
     /**
      * @return the column count
      */
-    public int getColumnCount() {
-        return attributes.length;
+    fun getColumnCount(): Int {
+        return attributes.size
     }
 
-    @NotNull
-    @Override
-    public Iterator<Tuple> iterator() {
-        return tuples.iterator();
+    override fun toString(): String {
+        return string
     }
 
-    private class Row implements Tuple {
+    override fun iterator(): MutableIterator<Tuple> {
+        return tuples.iterator()
+    }
 
-        private final String[] cells;
+    private inner class Row(vararg cells: String?) : Tuple {
+        private val cells: Array<out String?>
 
-        public Row(String... cells) {
-            this.cells = cells;
+        init {
+            this.cells = cells
         }
 
-        @Nullable
-        @Override
-        public String get(String attribute) {
-            int i = indexOf(attribute);
-            return i == -1 ? null : cells[i];
+        override fun get(attributeName: String): String? {
+            val i = indexOf(attributeName)
+            return if (i == -1) null else cells[i]
         }
 
-        @Override
-        public String get(int i) {
-            return cells[i];
+        override fun get(index: Int): String? {
+            return cells[index]
         }
 
-        @NotNull
         @Contract(pure = true)
-        @Override
-        public String toString() {
-            return Arrays.toString(cells);
+        override fun toString(): String {
+            return cells.joinToString(", ")
         }
-
     }
-
 }

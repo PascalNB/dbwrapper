@@ -1,113 +1,84 @@
-package com.pascalnb.dbwrapper.action;
+package com.pascalnb.dbwrapper.action
 
-import com.pascalnb.dbwrapper.Database;
-import com.pascalnb.dbwrapper.Mapper;
-import com.pascalnb.dbwrapper.Table;
+import com.pascalnb.dbwrapper.Database
+import com.pascalnb.dbwrapper.Mapper
+import com.pascalnb.dbwrapper.Table
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executor
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Function
+import java.util.function.Supplier
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.function.Supplier;
+class MultiDatabaseAction<B, T>(
+    private val actions: Collection<DatabaseAction<out B>>,
+    private val mapper: Function<B, T>,
+    override val executor: Executor,
+    private val serviceSupplier: Supplier<ExecutorService>
+) : DatabaseAction<List<T>> {
 
-public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
+    override fun query(): CompletableFuture<List<T>> {
+        return CompletableFuture.supplyAsync({
+            val service = serviceSupplier.get()
+            val futures: MutableList<CompletableFuture<out B>> = ArrayList()
+            val database = Database.instance.connect()
 
-    private final Collection<? extends DatabaseAction<? extends B>> actions;
-    private final Function<B, T> mapper;
-    private final Executor executor;
-    private final Supplier<ExecutorService> serviceSupplier;
+            for (action in actions) {
+                if (action is SingleDatabaseAction) {
 
-    public MultiDatabaseAction(Collection<? extends DatabaseAction<? extends B>> actions,
-        Function<B, T> mapper, Executor executor, Supplier<ExecutorService> serviceSupplier) {
-        this.actions = actions;
-        this.mapper = mapper;
-        this.executor = executor;
-        this.serviceSupplier = serviceSupplier;
-    }
+                    val future: CompletableFuture<out B?> = CompletableFuture.supplyAsync(Result@{
+                        val reference = AtomicReference<Table>()
+                        database.queryStatement({ newValue -> reference.set(newValue) }, action.query)
 
-    @Override
-    public CompletableFuture<List<T>> query() {
-        return CompletableFuture.supplyAsync(() -> {
+                        @Suppress("UNCHECKED_CAST")
+                        return@Result (action.mapper as Mapper<out B>).apply(reference.get())
+                    }, service)
 
-            ExecutorService service = serviceSupplier.get();
-            List<CompletableFuture<? extends B>> futures = new ArrayList<>();
-
-            Database database = Database.getInstance().connect();
-
-            for (DatabaseAction<? extends B> action : actions) {
-
-                if (action instanceof SingleDatabaseAction<?> single) {
-
-                    CompletableFuture<? extends B> future = CompletableFuture.supplyAsync(() -> {
-                        AtomicReference<Table> reference = new AtomicReference<>();
-                        database.queryStatement(reference::set, single.getQuery());
-                        //noinspection unchecked
-                        return ((Mapper<? extends B>) single.getMapper()).apply(reference.get());
-                    }, service);
-
-                    futures.add(future);
+                    futures.add(future)
                 } else {
-                    futures.add(action.withExecutor(service).query());
+                    futures.add(action.withExecutor(service).query())
                 }
             }
 
-            List<T> result = new ArrayList<>();
-            for (CompletableFuture<? extends B> future : futures) {
-                result.add(mapper.apply(future.join()));
+            val result: MutableList<T> = ArrayList()
+            for (future in futures) {
+                result.add(mapper.apply(future.join()))
             }
 
-            database.close();
-
-            service.shutdown();
-            return result;
-        }, executor);
+            database.close()
+            service.shutdown()
+            result
+        }, executor)
     }
 
-    @Override
-    public CompletableFuture<Void> execute() {
-        return CompletableFuture.runAsync(() -> {
-            ExecutorService service = serviceSupplier.get();
-            List<CompletableFuture<Void>> futures = new ArrayList<>();
-            Database database = Database.getInstance().connect();
+    override fun execute(): CompletableFuture<Void> {
+        return CompletableFuture.runAsync({
+            val service = serviceSupplier.get()
+            val futures: MutableList<CompletableFuture<Void>> = ArrayList()
+            val database = Database.instance.connect()
 
-            for (DatabaseAction<?> action : actions) {
+            for (action in actions) {
+                if (action is SingleDatabaseAction) {
 
-                if (action instanceof SingleDatabaseAction<?> single) {
+                    val future = CompletableFuture.supplyAsync<Void>({
+                        database.executeStatement(action.query)
+                        null
+                    }, service)
 
-                    CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> {
-                        database.executeStatement(single.getQuery());
-                        return null;
-                    }, service);
-
-                    futures.add(future);
-
+                    futures.add(future)
                 } else {
-                    futures.add(action.withExecutor(service).execute());
+                    futures.add(action.withExecutor(service).execute())
                 }
             }
-
-            for (CompletableFuture<Void> future : futures) {
-                future.join();
+            for (future in futures) {
+                future.join()
             }
-
-            database.close();
-
-            service.shutdown();
-        }, executor);
+            database.close()
+            service.shutdown()
+        }, executor)
     }
 
-    @Override
-    public Executor getExecutor() {
-        return executor;
+    override fun withExecutor(executor: Executor): DatabaseAction<List<T>> {
+        return MultiDatabaseAction(actions, mapper, executor, serviceSupplier)
     }
-
-    @Override
-    public DatabaseAction<List<T>> withExecutor(Executor executor) {
-        return new MultiDatabaseAction<>(actions, mapper, executor, serviceSupplier);
-    }
-
 }

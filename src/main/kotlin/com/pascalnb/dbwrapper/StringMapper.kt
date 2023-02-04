@@ -1,132 +1,116 @@
-package com.pascalnb.dbwrapper;
+package com.pascalnb.dbwrapper
 
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Contract
+import java.util.*
+import java.util.function.Function
 
-import java.util.Objects;
-import java.util.function.Function;
+@Suppress("unused")
+class StringMapper(`object`: Any?) {
+    private var string: String?
 
-@SuppressWarnings("unused")
-public class StringMapper {
+    init {
+        string = `object`?.toString()
+    }
 
-    private final String string;
+    fun <T> to(type: T?): T? {
+        @Suppress("UNCHECKED_CAST")
+        return if (type == null) {
+            null
+        } else cast(string, type.javaClass) as T?
+    }
 
-    public StringMapper(@Nullable Object object) {
-        if (object == null) {
-            this.string = null;
-            return;
+    fun <T> to(clazz: Class<T>): T? {
+        @Suppress("UNCHECKED_CAST")
+        return cast(string, clazz) as T?
+    }
+
+    fun <T> applyIfNotNull(mapper: Function<String, T>): T? {
+        return if (string == null) {
+            null
+        } else mapper.apply(string!!)
+    }
+
+    fun <T> apply(mapper: Function<String?, T>): T {
+        return mapper.apply(string)
+    }
+
+    fun <T> asOrDefault(fallback: T): T {
+        @Suppress("UNCHECKED_CAST")
+        return if (string == null) {
+            fallback
+        } else cast(string, fallback!!::class.java) as T
+    }
+
+    fun toNullableString(): String? {
+        return string
+    }
+
+    override fun toString(): String {
+        return string!!
+    }
+
+    fun toInt(): Int {
+        return cast(string!!, Integer.TYPE) as Int
+    }
+
+    fun toBoolean(): Boolean {
+        return cast(string!!, java.lang.Boolean.TYPE) as Boolean
+    }
+
+    fun toDouble(): Double {
+        return cast(string!!, java.lang.Double.TYPE) as Double
+    }
+
+    fun toLong(): Long {
+        return cast(string!!, java.lang.Long.TYPE) as Long
+    }
+
+    fun toFloat(): Float {
+        return cast(string!!, java.lang.Float.TYPE) as Float
+    }
+
+    fun toChar(): Char {
+        return cast(string!!, Character.TYPE) as Char
+    }
+
+    fun toShort(): Short {
+        return cast(string!!, java.lang.Short.TYPE) as Short
+    }
+
+    val isNull = string == null
+
+    companion object {
+
+        @Contract(value = "null, _ -> null; !null, _ -> !null", pure = true)
+        private fun cast(string: String?, clazz: Class<*>): Any? {
+            if (string == null) {
+                return null
+            }
+            if (clazz == String::class.java) {
+                return string
+            }
+            if (clazz == Integer.TYPE || clazz == Int::class.java) {
+                return string.toInt()
+            }
+            if (clazz == java.lang.Boolean.TYPE || clazz == Boolean::class.java) {
+                return string.toBoolean() || "t" == string || "1" == string
+            }
+            if (clazz == java.lang.Double.TYPE || clazz == Double::class.java) {
+                return string.toDouble()
+            }
+            if (clazz == java.lang.Long.TYPE || clazz == Long::class.java) {
+                return string.toLong()
+            }
+            if (clazz == java.lang.Float.TYPE || clazz == Float::class.java) {
+                return string.toFloat()
+            }
+            if (clazz == Character.TYPE || clazz == Char::class.java) {
+                return string[0]
+            }
+            if (clazz == java.lang.Short.TYPE || clazz == Short::class.java) {
+                return string.toShort()
+            }
+            throw UnsupportedOperationException("Cannot cast string to $clazz")
         }
-        this.string = object.toString();
     }
-
-    @SuppressWarnings("unchecked")
-    @Nullable
-    public <T> T as(@Nullable T type) {
-        if (type == null) {
-            return null;
-        }
-        return (T) cast(string, type.getClass());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Nullable
-    public <T> T as(@NotNull Class<T> clazz) {
-        return (T) cast(string, clazz);
-    }
-
-    @Nullable
-    public <T> T applyIfNotNull(Function<String, T> mapper) {
-        if (string == null) {
-            return null;
-        }
-        return mapper.apply(string);
-    }
-
-    @SuppressWarnings("unchecked")
-    @NotNull
-    public <T> T asOrDefault(@NotNull T fallback) {
-        if (string == null) {
-            return fallback;
-        }
-        return (T) cast(string, fallback.getClass());
-    }
-
-    @Nullable
-    public String asString() {
-        return string;
-    }
-
-    public int asInt() {
-        Objects.requireNonNull(string);
-        return (int) cast(string, Integer.TYPE);
-    }
-
-    public boolean asBoolean() {
-        Objects.requireNonNull(string);
-        return (boolean) cast(string, Boolean.TYPE);
-    }
-
-    public double asDouble() {
-        Objects.requireNonNull(string);
-        return (double) cast(string, Double.TYPE);
-    }
-
-    public long asLong() {
-        Objects.requireNonNull(string);
-        return (long) cast(string, Long.TYPE);
-    }
-
-    public float asFloat() {
-        Objects.requireNonNull(string);
-        return (float) cast(string, Float.TYPE);
-    }
-
-    public char asChar() {
-        Objects.requireNonNull(string);
-        return (char) cast(string, Character.TYPE);
-    }
-
-    public short asShort() {
-        Objects.requireNonNull(string);
-        return (short) cast(string, Short.TYPE);
-    }
-
-    public boolean isNull() {
-        return string == null;
-    }
-
-    @Contract(value = "null, _ -> null; !null, _ -> !null", pure = true)
-    @Nullable
-    private static Object cast(@Nullable String string, Class<?> clazz) {
-        if (string == null) {
-            return null;
-        }
-        if (clazz == String.class) {
-            return string;
-        }
-        if (clazz == Integer.TYPE || clazz == Integer.class) {
-            return Integer.parseInt(string);
-        }
-        if (clazz == Boolean.TYPE || clazz == Boolean.class) {
-            return Boolean.parseBoolean(string) || "t".equals(string) || "1".equals(string);
-        }
-        if (clazz == Double.TYPE || clazz == Double.class) {
-            return Double.parseDouble(string);
-        }
-        if (clazz == Long.TYPE || clazz == Long.class) {
-            return Long.parseLong(string);
-        }
-        if (clazz == Float.TYPE || clazz == Float.class) {
-            return Float.parseFloat(string);
-        }
-        if (clazz == Character.TYPE || clazz == Character.class) {
-            return string.charAt(0);
-        }
-        if (clazz == Short.TYPE || clazz == Short.class) {
-            return Short.parseShort(string);
-        }
-        throw new UnsupportedOperationException("Cannot cast string to " + clazz.toString());
-    }
-
 }

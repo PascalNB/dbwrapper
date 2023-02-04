@@ -1,69 +1,41 @@
-package com.pascalnb.dbwrapper.action;
+package com.pascalnb.dbwrapper.action
 
-import com.pascalnb.dbwrapper.Database;
-import com.pascalnb.dbwrapper.Query;
-import com.pascalnb.dbwrapper.Table;
+import com.pascalnb.dbwrapper.Database
+import com.pascalnb.dbwrapper.Query
+import com.pascalnb.dbwrapper.Table
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Function
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
+class SingleDatabaseAction<T>(val query: Query, val mapper: Function<Table, T?>, override val executor: Executor) :
+    DatabaseAction<T> {
 
-public class SingleDatabaseAction<T> implements DatabaseAction<T> {
-
-    private final Query query;
-    private final Function<Table, T> mapper;
-    private final Executor executor;
-
-    public SingleDatabaseAction(Query query, Function<Table, T> mapper, Executor executor) {
-        this.query = query;
-        this.mapper = mapper;
-        this.executor = executor;
-    }
-
-    @Override
-    public CompletableFuture<T> query() {
-        return CompletableFuture.supplyAsync(() -> {
-            AtomicReference<Table> reference = new AtomicReference<>();
-            Database database = Database.getInstance().connect();
+    override fun query(): CompletableFuture<T> {
+        return CompletableFuture.supplyAsync({
+            val reference = AtomicReference<Table>()
+            val database = Database.instance.connect()
             try {
-                database.queryStatement(reference::set, query);
-                return mapper.apply(reference.get());
+                database.queryStatement({ newValue -> reference.set(newValue) }, query)
+                mapper.apply(reference.get())
             } finally {
-                database.close();
+                database.close()
             }
-        }, getExecutor());
+        }, executor)
     }
 
-    @Override
-    public CompletableFuture<Void> execute() {
-        return CompletableFuture.runAsync(() -> {
-            Database database = Database.getInstance().connect();
+    override fun execute(): CompletableFuture<Void> {
+        return CompletableFuture.runAsync({
+            val database = Database.instance.connect()
             try {
-                database.executeStatement(query);
+                database.executeStatement(query)
             } finally {
-                database.close();
+                database.close()
             }
-        }, getExecutor());
+        }, executor)
     }
 
-    @Override
-    public Executor getExecutor() {
-        return executor;
+    override fun withExecutor(executor: Executor): DatabaseAction<T> {
+        return SingleDatabaseAction(query, mapper, executor)
     }
-
-    @Override
-    public DatabaseAction<T> withExecutor(Executor executor) {
-        return new SingleDatabaseAction<>(query, mapper, executor);
-    }
-
-    protected Function<Table, T> getMapper() {
-        return mapper;
-    }
-
-    protected Query getQuery() {
-        return query;
-    }
-
 }
-

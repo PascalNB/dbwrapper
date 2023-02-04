@@ -1,212 +1,208 @@
-package com.pascalnb.dbwrapper;
+package com.pascalnb.dbwrapper
 
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
+import org.jetbrains.annotations.Contract
+import java.sql.*
+import java.util.function.Consumer
 
 /**
- * The JDBC implementation of {@link Database}.
+ * The JDBC implementation of [Database].
  */
-@SuppressWarnings("unused")
-class JDBC extends Database {
+@Suppress("unused")
+internal class JDBC : Database() {
 
-    private static final int FETCH_SIZE = 500;
+    private var connection: Connection? = null
+    private var statement: Statement? = null
 
-    private Connection connection = null;
-    private Statement statement = null;
-
-    @Override
     @Contract("-> this")
-    public Database connect() {
+    override fun connect(): Database {
         if (url == null) {
-            throw new DatabaseException("URL for database connection not set.");
+            throw DatabaseException("URL for database connection not set.")
         }
-
         try {
-            connection = DriverManager.getConnection(url, username, password);
-            connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
-            connection.setAutoCommit(false);
-            statement = connection.createStatement();
-        } catch (SQLException e) {
-            throw new DatabaseException(e);
+            connection = DriverManager.getConnection(url, username, password)
+            connection!!.transactionIsolation = Connection.TRANSACTION_SERIALIZABLE
+            connection!!.autoCommit = false
+            statement = connection!!.createStatement()
+        } catch (e: SQLException) {
+            throw DatabaseException(e)
         }
-
-        return this;
+        return this
     }
 
-    @Override
-    protected void checkConnection() throws DatabaseException {
+    @Throws(DatabaseException::class)
+    override fun checkConnection() {
         if (connection == null || statement == null) {
-            throw new DatabaseException("No connection to the database exists" +
-                "or it has already been closed.");
+            throw DatabaseException(
+                "No connection to the database exists" +
+                        "or it has already been closed."
+            )
         }
     }
 
-    @Override
     @Contract("_ -> this")
-    public Database execute(@NotNull Query query) {
-        checkConnection();
-
+    override fun execute(query: Query): Database {
+        checkConnection()
         try {
-            statement.execute(query.toString());
-        } catch (SQLException e) {
-            throw new DatabaseException(e);
+            statement!!.execute(query.toString())
+        } catch (e: SQLException) {
+            throw DatabaseException(e)
         }
-
-        return this;
+        return this
     }
 
-    @Override
     @Contract("_, _ -> this")
-    public Database query(@NotNull Consumer<Table> callback, @NotNull Query query) {
-        checkConnection();
-
+    override fun query(callback: Consumer<Table>, query: Query): Database {
+        checkConnection()
         try {
-            statement.setFetchSize(FETCH_SIZE);
-
-            callback.accept(parseResult(statement.executeQuery(query.toString())));
-        } catch (SQLException e) {
-            throw new DatabaseException(e);
+            statement!!.fetchSize = FETCH_SIZE
+            callback.accept(parseResult(statement!!.executeQuery(query.toString())))
+        } catch (e: SQLException) {
+            throw DatabaseException(e)
         }
-
-        return this;
+        return this
     }
 
     @Contract("_, _ -> param1")
-    private PreparedStatement setVariables(@NotNull PreparedStatement statement, @NotNull Object... variables) {
+    private fun setVariables(statement: PreparedStatement, variables: Array<Any?>): PreparedStatement {
         try {
-            statement.setFetchSize(FETCH_SIZE);
+            statement.fetchSize = FETCH_SIZE
 
-            for (int i = 0; i < variables.length; i++) {
-                Object variable = variables[i];
-                int index = i + 1;
+            for ((i, variable) in variables.withIndex()) {
+                val index = i + 1
 
                 if (variable == null) {
-                    statement.setObject(index, null);
-                    continue;
+                    statement.setObject(index, null)
+                    continue
                 }
 
-                if (variable instanceof Integer) {
-                    statement.setInt(index, (int) variable);
-                } else if (variable instanceof Double) {
-                    statement.setDouble(index, (double) variable);
-                } else if (variable instanceof Boolean) {
-                    statement.setBoolean(index, (boolean) variable);
-                } else if (variable instanceof Long) {
-                    statement.setLong(index, (long) variable);
-                } else if (variable instanceof Float) {
-                    statement.setFloat(index, (float) variable);
-                } else if (variable instanceof Byte) {
-                    statement.setByte(index, (byte) variable);
-                } else if (variable instanceof Short) {
-                    statement.setShort(index, (short) variable);
-                } else {
-                    statement.setString(index, (String) variable);
+                when (variable) {
+                    is Int -> {
+                        statement.setInt(index, variable)
+                    }
+
+                    is Double -> {
+                        statement.setDouble(index, variable)
+                    }
+
+                    is Boolean -> {
+                        statement.setBoolean(index, variable)
+                    }
+
+                    is Long -> {
+                        statement.setLong(index, variable)
+                    }
+
+                    is Float -> {
+                        statement.setFloat(index, variable)
+                    }
+
+                    is Byte -> {
+                        statement.setByte(index, variable)
+                    }
+
+                    is Short -> {
+                        statement.setShort(index, variable)
+                    }
+
+                    else -> {
+                        statement.setString(index, variable.toString())
+                    }
                 }
             }
-        } catch (SQLException e) {
-            throw new DatabaseException(e);
+        } catch (e: SQLException) {
+            throw DatabaseException(e)
         }
-        return statement;
+        return statement
     }
 
-    @Override
     @Contract("_, _ -> this")
-    public Database queryStatement(@NotNull Consumer<Table> callback, @NotNull Query statement) {
-        checkConnection();
-
+    override fun queryStatement(callback: Consumer<Table>, preparedStatement: Query): Database {
+        checkConnection()
         try {
             callback.accept(
-                parseResult(setVariables(
-                    connection.prepareStatement(statement.toString()),
-                    statement.getArgs()
-                ).executeQuery()));
-        } catch (SQLException e) {
-            throw new DatabaseException(e);
+                parseResult(
+                    setVariables(
+                        connection!!.prepareStatement(preparedStatement.toString()),
+                        preparedStatement.args
+                    ).executeQuery()
+                )
+            )
+        } catch (e: SQLException) {
+            throw DatabaseException(e)
         }
-
-        return this;
+        return this
     }
 
-    @Override
     @Contract("_ -> this")
-    public Database executeStatement(@NotNull Query statement) {
-        checkConnection();
-
+    override fun executeStatement(preparedStatement: Query): Database {
+        checkConnection()
         try {
-            setVariables(connection.prepareStatement(statement.toString()), statement.getArgs()).execute();
-        } catch (SQLException e) {
-            throw new DatabaseException(e);
+            setVariables(connection!!.prepareStatement(preparedStatement.toString()), preparedStatement.args).execute()
+        } catch (e: SQLException) {
+            throw DatabaseException(e)
         }
-
-        return this;
+        return this
     }
 
     @Contract("_, _ -> this")
-    public Database executeBatch(String preparedStatement, @NotNull Object[]... variablesArray) {
-        checkConnection();
-
+    fun executeBatch(preparedStatement: String?, vararg variablesArray: Array<Any?>): Database {
+        checkConnection()
         try {
-            PreparedStatement statement = connection.prepareStatement(preparedStatement);
-
-            for (Object[] variables : variablesArray) {
-                setVariables(statement, variables).addBatch();
+            val statement = connection!!.prepareStatement(preparedStatement)
+            for (variables in variablesArray) {
+                setVariables(statement, variables).addBatch()
             }
-
-            statement.executeBatch();
-
-        } catch (SQLException e) {
-            throw new DatabaseException(e);
+            statement.executeBatch()
+        } catch (e: SQLException) {
+            throw DatabaseException(e)
         }
-
-        return this;
+        return this
     }
 
-    @Override
-    public void close() {
-        checkConnection();
-
+    override fun close() {
+        checkConnection()
         try {
-            connection.commit();
-            connection.setAutoCommit(true);
-            connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            connection!!.commit()
+            connection!!.autoCommit = true
+            connection!!.close()
+        } catch (e: SQLException) {
+            e.printStackTrace()
         }
-
-        connection = null;
-        statement = null;
+        connection = null
+        statement = null
     }
 
-    // specific implementation to parse a ResultSet to a Table
-    @Contract(value = "_ -> new")
-    private static Table parseResult(@NotNull ResultSet resultSet) {
-        try {
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
-            String[] attributes = new String[columnCount];
-            for (int i = 0; i < columnCount; i++) {
-                attributes[i] = metaData.getColumnName(i + 1);
-            }
+    companion object {
+        private const val FETCH_SIZE = 500
 
-            List<String[]> tuples = new ArrayList<>();
-            while (resultSet.next()) {
-                String[] tuple = new String[columnCount];
-                for (int i = 0; i < columnCount; i++) {
-                    tuple[i] = resultSet.getString(i + 1);
+        // specific implementation to parse a ResultSet to a Table
+        @Contract(value = "_ -> new")
+        private fun parseResult(resultSet: ResultSet): Table {
+            return try {
+                val metaData = resultSet.metaData
+                val columnCount = metaData.columnCount
+                val attributes = Array(columnCount) { "" }
+
+                for (i in 0 until columnCount) {
+                    attributes[i] = metaData.getColumnName(i + 1)
                 }
-                tuples.add(tuple);
+
+                val tuples: MutableList<Array<String?>> = ArrayList()
+
+                while (resultSet.next()) {
+                    val tuple = arrayOfNulls<String>(columnCount)
+
+                    for (i in 0 until columnCount) {
+                        tuple[i] = resultSet.getString(i + 1)
+                    }
+
+                    tuples.add(tuple)
+                }
+
+                Table(attributes, tuples)
+            } catch (e: SQLException) {
+                throw DatabaseException(e)
             }
-
-            return new Table(attributes, tuples);
-
-        } catch (SQLException e) {
-            throw new DatabaseException(e);
         }
     }
-
 }

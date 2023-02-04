@@ -1,49 +1,49 @@
-package com.pascalnb.dbwrapper;
+package com.pascalnb.dbwrapper
 
-import java.io.*;
-import java.util.Properties;
+import java.io.*
+import java.util.*
 
 /**
- * Implementation of {@link DatabaseAuthenticator} that reads the credentials from a cfg file.
+ * Implementation of [DatabaseAuthenticator] that reads the credentials from a cfg file.
  *
  * @see DatabaseAuthenticator
  */
-@SuppressWarnings("unused")
-class ConfigAuthenticator extends DatabaseAuthenticator {
+@Suppress("unused")
+internal class ConfigAuthenticator(configFile: String) : DatabaseAuthenticator() {
+
+    private val credentialsArray: Array<String?>
+
+    init {
+        val properties = Properties()
+        try {
+            val jarPath = File(javaClass.protectionDomain.codeSource.location.path)
+            val propertiesPath = jarPath.parentFile.absolutePath
+            properties.load(FileInputStream("$propertiesPath/$configFile"))
+        } catch (e: FileNotFoundException) {
+            try {
+                javaClass.classLoader.getResourceAsStream(configFile).use { config -> properties.load(config) }
+            } catch (e2: IOException) {
+                throw UncheckedIOException(e2)
+            }
+        } catch (e: IOException) {
+            throw UncheckedIOException(e)
+        }
+
+        val username = properties.getProperty("username")
+        val password = properties.getProperty("password")
+        val url = properties.getProperty("host")
+
+        try {
+            Class.forName(properties.getProperty("driver"))
+        } catch (e: ClassNotFoundException) {
+            throw DatabaseException("JDBC driver not loaded")
+        }
+
+        credentialsArray = arrayOf(username, password, url)
+    }
 
     /**
      * Returns the database credentials from the credentials file.
      */
-    protected String[] getCredentials() {
-        Properties properties = new Properties();
-        try {
-            File jarPath = new File(getClass().getProtectionDomain()
-                .getCodeSource().getLocation().getPath());
-            String propertiesPath = jarPath.getParentFile().getAbsolutePath();
-            properties.load(new FileInputStream(propertiesPath + "/config.cfg"));
-
-        } catch (FileNotFoundException e) {
-            try (InputStream config = getClass().getClassLoader().getResourceAsStream("config.cfg")) {
-                properties.load(config);
-            } catch (IOException e2) {
-                throw new UncheckedIOException(e2);
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-
-        String username = properties.getProperty("username");
-        String password = properties.getProperty("password");
-        String url = properties.getProperty("host");
-
-        try {
-            Class.forName(properties.getProperty("driver"));
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            throw new DatabaseException("JDBC driver not loaded");
-        }
-
-        return new String[]{username, password, url};
-    }
-
+    override val credentials: Array<String?> get() = credentialsArray
 }

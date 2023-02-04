@@ -13,12 +13,10 @@ A wrapper to quickly make database queries with asynchronous callbacks.
 Add jitpack repository:
 
 ```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
+<repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+</repository>
 ```
 
 Add dbwrapper dependency to project:
@@ -45,7 +43,7 @@ driver=<driver class>
 Or set a custom way to authenticate the database:
 
 ```java
-DatabaseAuthenticator.setImplementation(CustomAuthenticator::new);
+DatabaseAuthenticator.setImplementation(/* custom authenticator */);
 ```
 
 ## Querying
@@ -139,8 +137,6 @@ public class User {
 
     @ParseField("username") // specifiy different name
     private String name;
-
-    public User() {} // constructor without arguments required
 
     public int getId() {
         return id;

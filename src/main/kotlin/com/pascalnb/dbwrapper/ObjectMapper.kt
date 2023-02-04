@@ -1,87 +1,69 @@
-package com.pascalnb.dbwrapper;
+package com.pascalnb.dbwrapper
 
-import com.pascalnb.dbwrapper.annotation.ParseField;
-import org.jetbrains.annotations.NotNull;
+import com.pascalnb.dbwrapper.annotation.ParseField
+import java.lang.reflect.Constructor
+import java.lang.reflect.Field
+import java.lang.reflect.Modifier
+import java.util.*
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+class ObjectMapper<T>(clazz: Class<T>) : Mapper<T> {
+    private val constructor: Constructor<T>
+    private val pairs: MutableList<Array<Any>> = ArrayList()
 
-public class ObjectMapper<T> implements Mapper<T> {
-
-    private final Constructor<T> constructor;
-    private final List<Object[]> pairs;
-
-    public ObjectMapper(Class<T> clazz) {
-        Constructor<?> constructor = null;
-        for (Constructor<?> c : clazz.getDeclaredConstructors()) {
-            c.setAccessible(true);
-            if (c.getParameterCount() == 0) {
-                constructor = c;
-                break;
-            }
-        }
-        if (constructor == null) {
-            throw new IllegalArgumentException(clazz + " does not have a constructor with 0 parameters");
-        }
-
-        List<Object[]> pairs = new ArrayList<>();
-        for (Field field : clazz.getDeclaredFields()) {
-            field.setAccessible(true);
-            ParseField parseField = field.getAnnotation(ParseField.class);
-
-            if (parseField != null) {
-                if ((field.getModifiers() & Modifier.FINAL) != 0) {
-                    throw new IllegalArgumentException(
-                        "Final fields cannot be annotated with " + ParseField.class.getName());
-                }
-
-                String parseFieldName = parseField.value();
-                pairs.add(new Object[]{field, "".equals(parseFieldName) ? field.getName() : parseFieldName});
-            }
-        }
-
-        if (pairs.isEmpty()) {
-            throw new IllegalArgumentException(
-                clazz + " does not have non-final fields annotated with " + ParseField.class);
-        }
-
-        //noinspection unchecked
-        this.constructor = (Constructor<T>) constructor;
-        this.pairs = pairs;
-    }
-
-    public List<T> applyAll(@NotNull Table table) {
+    init {
         try {
-            List<T> list = new ArrayList<>();
+            constructor = clazz.getDeclaredConstructor()
+            constructor.isAccessible = true
+        } catch (e: NoSuchMethodException) {
+            throw NoSuchMethodException("No constructor with 0 parameters found")
+        }
 
-            for (Tuple row : table) {
-                T instance = constructor.newInstance();
+        for (field in clazz.declaredFields) {
+            field.isAccessible = true
+            val parseField = field.getAnnotation(ParseField::class.java) ?: continue
 
-                for (Object[] pair : pairs) {
-                    StringMapper value = new StringMapper(row.get((String) pair[1]));
-                    Field field = (Field) pair[0];
-                    Object parsed = value.as(field.getType());
-                    field.set(instance, parsed);
-                }
-
-                list.add(instance);
+            require(field.modifiers.and(Modifier.FINAL) == 0) {
+                "Final fields cannot be annotated with " + ParseField::class.java.name
             }
 
-            return Collections.unmodifiableList(list);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+            val parseFieldName = parseField.value
+            pairs.add(arrayOf(field, if ("" == parseFieldName) field.name else parseFieldName))
+        }
+
+        require(pairs.isNotEmpty()) {
+            clazz.toString() + " does not have non-final fields annotated with " + ParseField::class.java
+        }
+
+    }
+
+    private fun rowToInstance(row: Tuple): T {
+        val instance = constructor.newInstance()
+        for (pair in pairs) {
+            val value = StringMapper(row[pair[1] as String])
+            val field = pair[0] as Field
+            val parsed = value.to(field.type)
+            field[instance] = parsed
+        }
+        return instance
+    }
+
+    fun applyAll(table: Table): List<T> {
+        return try {
+            val list: MutableList<T> = ArrayList()
+            for (row in table) {
+                list.add(rowToInstance(row))
+            }
+            Collections.unmodifiableList(list)
+        } catch (e: Exception) {
+            throw RuntimeException(e)
         }
     }
 
-    @Override
-    public T apply(@NotNull Table table) {
-        List<T> list = applyAll(table);
-        return list.isEmpty() ? null : list.get(0);
+    override fun apply(table: Table): T? {
+        if (table.isEmpty) {
+            return null
+        }
+        val row = table.getRow(0)
+        return rowToInstance(row)
     }
-
 }

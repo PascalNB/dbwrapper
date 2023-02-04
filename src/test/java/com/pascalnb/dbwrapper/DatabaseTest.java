@@ -18,7 +18,8 @@ public class DatabaseTest {
     public void testQuery() {
         Assertions.assertDoesNotThrow(() -> {
             DatabaseAction.of("SELECT version();")
-                .query(Mapper.stringValue())
+                .query(Mapper.toMapping())
+                .thenApply(StringMapper::toString)
                 .thenAccept(System.out::println)
                 .join();
         });

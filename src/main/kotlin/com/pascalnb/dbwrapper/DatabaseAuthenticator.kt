@@ -1,64 +1,61 @@
-package com.pascalnb.dbwrapper;
+package com.pascalnb.dbwrapper
 
-import java.util.function.Supplier;
+import java.util.function.Supplier
 
 /**
  * Abstract singleton that is used to get the database credentials and set up the database
- * connection. Requires an implementation that extends {@link DatabaseAuthenticator}.
+ * connection. Requires an implementation that extends [DatabaseAuthenticator].
  */
-public abstract class DatabaseAuthenticator {
-
-    private static DatabaseAuthenticator instance;
-    private static Supplier<DatabaseAuthenticator> supplier;
-
-    public static DatabaseAuthenticator getInstance() {
-        if (instance == null) {
-            if (supplier == null) {
-                supplier = ConfigAuthenticator::new;
-            }
-            instance = supplier.get();
-        }
-        return instance;
-    }
-
-    public static void setImplementation(Supplier<DatabaseAuthenticator> supplier) {
-        DatabaseAuthenticator.supplier = supplier;
-    }
-
-    public static void invalidate() {
-        instance = null;
-        Database.setUsername(null);
-        Database.setPassword(null);
-        Database.setUrl(null);
-    }
-
+abstract class DatabaseAuthenticator {
     /**
      * Sets the username, password and url for all database connections.
      *
      * @throws DatabaseException when a database error occurs
      */
-    public final void authenticate() throws DatabaseException {
-        String[] credentials = getCredentials();
-
-        Database.setUsername(credentials[0]);
-        Database.setPassword(credentials[1]);
-
+    @Throws(DatabaseException::class)
+    fun authenticate() {
+        val credentials = credentials
+        Database.username = (credentials[0])
+        Database.password = credentials[1]
         if (credentials[2] == null) {
-            invalidate();
-            throw new DatabaseException("url cannot be null");
+            invalidate()
+            throw DatabaseException("url cannot be null")
         }
-
-        Database.setUrl(credentials[2]);
+        Database.url = credentials[2]
 
         // test connection
-        Database.getInstance().connect().close();
+        Database.instance.connect().close()
     }
 
-    /**
-     * Returns the username, password and connection url in an array.
-     *
-     * @return the credentials
-     */
-    protected abstract String[] getCredentials();
+    protected abstract val credentials: Array<String?>
 
+    companion object {
+
+        private var instance: DatabaseAuthenticator? = null
+        private var supplier: Supplier<DatabaseAuthenticator>? = null
+
+        @JvmStatic
+        fun getInstance(): DatabaseAuthenticator {
+            if (instance == null) {
+                if (supplier == null) {
+                    supplier = Supplier { ConfigAuthenticator("config.cfg") }
+                }
+                instance = supplier!!.get()
+            }
+            return instance!!
+        }
+
+        @JvmStatic
+        fun setImplementation(supplier: Supplier<DatabaseAuthenticator>?) {
+            Companion.supplier = supplier
+        }
+
+        @JvmStatic
+        fun invalidate() {
+            instance = null
+            Database.username = null
+            Database.password = null
+            Database.url = null
+        }
+    }
 }
