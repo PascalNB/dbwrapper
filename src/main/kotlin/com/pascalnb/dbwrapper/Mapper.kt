@@ -9,12 +9,12 @@ import java.util.stream.Stream
  * Represents a function that maps the table resulting from a query to a given type.
  *
  * @param <T> the type
-</T> */
+ */
 @Suppress("unused")
 fun interface Mapper<T> : Function<Table, T?> {
 
     @Throws(ClassCastException::class)
-    fun orDefault(defaultValue: Any): Mapper<T>? {
+    fun orDefault(defaultValue: Any): Mapper<T> {
         @Suppress("UNCHECKED_CAST")
         return Mapper { table ->
             this.apply(table) ?: defaultValue as T

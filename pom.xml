@@ -66,6 +66,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.2</version>
                 <executions>
                     <execution>
                         <id>compile</id>
@@ -82,6 +83,11 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-Xjvm-default=enable</arg>
+                    </compilerArgs>
+                </configuration>
             </plugin>
         </plugins>
     </build>
