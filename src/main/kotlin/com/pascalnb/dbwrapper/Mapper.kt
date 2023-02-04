@@ -16,8 +16,8 @@ fun interface Mapper<T> : Function<Table, T?> {
     @Throws(ClassCastException::class)
     fun orDefault(defaultValue: Any): Mapper<T> {
         @Suppress("UNCHECKED_CAST")
-        return Mapper { table ->
-            this.apply(table) ?: defaultValue as T
+        return Mapper {
+            this.apply(it) ?: defaultValue as T
         }
     }
 
@@ -47,10 +47,8 @@ fun interface Mapper<T> : Function<Table, T?> {
         @Contract(pure = true)
         @JvmStatic
         fun <T> singleValue(mapper: Function<String, T>): Mapper<T> {
-            return Mapper { table ->
-                if (table.isEmpty) null else mapper.apply(
-                    table.getRow(0)[0]!!
-                )
+            return Mapper {
+                if (it.isEmpty) null else mapper.apply(it[0][0]!!)
             }
         }
 
@@ -67,7 +65,7 @@ fun interface Mapper<T> : Function<Table, T?> {
          */
         @JvmStatic
         fun <T> singleNullableValue(mapper: Function<String?, T>): Mapper<T> {
-            return Mapper { table -> mapper.apply(stringValue().apply(table)) }
+            return Mapper { mapper.apply(stringValue().apply(it)) }
         }
 
         /**
@@ -96,12 +94,12 @@ fun interface Mapper<T> : Function<Table, T?> {
         @Contract(pure = true)
         @JvmStatic
         fun <T> valueList(mapper: Function<String?, T>): Mapper<List<T>> {
-            return Mapper { table ->
-                if (table.isEmpty) {
+            return Mapper {
+                if (it.isEmpty) {
                     return@Mapper listOf()
                 }
                 val list: MutableList<T> = ArrayList()
-                for (tuple in table) {
+                for (tuple in it) {
                     list.add(mapper.apply(tuple[0]))
                 }
                 Collections.unmodifiableList(list)
@@ -118,7 +116,7 @@ fun interface Mapper<T> : Function<Table, T?> {
         @Contract(pure = true)
         @JvmStatic
         fun <T> fromFunction(function: Function<Table, T?>): Mapper<T> {
-            return Mapper { t: Table -> function.apply(t) }
+            return Mapper { function.apply(it) }
         }
 
         /**
@@ -129,7 +127,7 @@ fun interface Mapper<T> : Function<Table, T?> {
         @Contract(pure = true)
         @JvmStatic
         fun identity(): Mapper<Table> {
-            return Mapper { t -> t }
+            return Mapper { it }
         }
 
         /**
@@ -140,15 +138,16 @@ fun interface Mapper<T> : Function<Table, T?> {
         @Contract(pure = true)
         @JvmStatic
         fun toMapping(): Mapper<StringMapper> {
-            return singleNullableValue { `object`: String? -> StringMapper(`object`) }
+            return singleNullableValue {
+                StringMapper(it)
+            }
         }
 
         @Contract(pure = true)
         @JvmStatic
         fun <T> toPrimitive(clazz: Class<out T>): Mapper<T> {
-            return Mapper { t ->
-                toMapping().apply(t)!!
-                    .to(clazz)
+            return Mapper {
+                toMapping().apply(it)!!.to(clazz)
             }
         }
 
@@ -161,32 +160,29 @@ fun interface Mapper<T> : Function<Table, T?> {
         @Contract(pure = true)
         @JvmStatic
         fun <T> toObjects(clazz: Class<T>): Mapper<List<T>> {
-            return Mapper { t ->
-                ObjectMapper(clazz).applyAll(t)
+            return Mapper {
+                ObjectMapper(clazz).applyAll(it)
             }
         }
 
         @Contract(pure = true)
         @JvmStatic
         fun firstRow(): Mapper<Tuple?> {
-            return Mapper { table ->
-                if (table.isEmpty) {
-                    return@Mapper null
-                }
-                table.getRow(0)
+            return Mapper {
+                if (it.isEmpty) null else it[0]
             }
         }
 
         @Contract(pure = true)
         @JvmStatic
         fun allRows(): Mapper<List<Tuple>> {
-            return Mapper { t -> t.getTuples() }
+            return Mapper { it.tuples }
         }
 
         @Contract(pure = true)
         @JvmStatic
         fun stream(): Mapper<Stream<Tuple>> {
-            return Mapper { t -> t.getTuples().stream() }
+            return Mapper { it.tuples.stream() }
         }
     }
 }

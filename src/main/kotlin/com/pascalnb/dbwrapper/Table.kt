@@ -15,7 +15,12 @@ class Table(
     val attributes: Array<String>, tuples: List<Array<String?>>
 ) : Iterable<Tuple> {
 
-    private val tuples: MutableList<Tuple>
+    /**
+     * Returns a list of all tuples in the table.
+     *
+     * @return a list of tuples
+     */
+    val tuples: MutableList<Tuple>
     private val index: MutableMap<String, Int>
     private var string: String
 
@@ -100,21 +105,12 @@ class Table(
     }
 
     /**
-     * Returns a list of all tuples in the table.
-     *
-     * @return a list of tuples
-     */
-    fun getTuples(): List<Tuple> {
-        return tuples
-    }
-
-    /**
      * Returns the row for the given row index.
      *
      * @param index the index of the row
      * @return an array with the row values
      */
-    fun getRow(index: Int): Tuple {
+    operator fun get(index: Int): Tuple {
         return tuples[index]
     }
 
@@ -130,12 +126,11 @@ class Table(
          */
         get() = tuples.size
 
-    /**
-     * @return the column count
-     */
-    fun getColumnCount(): Int {
-        return attributes.size
-    }
+    val columnCount: Int
+        /**
+         * @return the column count
+         */
+        get() = attributes.size
 
     override fun toString(): String {
         return string
