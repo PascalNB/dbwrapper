@@ -43,6 +43,9 @@
                                 <source>src/main/kotlin</source>
                                 <source>target/generated-sources/annotations</source>
                             </sourceDirs>
+                            <args>
+                                <arg>-Xjvm-default=enable</arg>
+                            </args>
                         </configuration>
                     </execution>
                     <execution>
@@ -83,11 +86,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <compilerArgs>
-                        <arg>-Xjvm-default=enable</arg>
-                    </compilerArgs>
-                </configuration>
             </plugin>
         </plugins>
     </build>
