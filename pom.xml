@@ -44,7 +44,7 @@
                                 <source>target/generated-sources/annotations</source>
                             </sourceDirs>
                             <args>
-                                <arg>-Xjvm-default=enable</arg>
+                                <arg>-Xjvm-default=all</arg>
                             </args>
                         </configuration>
                     </execution>
