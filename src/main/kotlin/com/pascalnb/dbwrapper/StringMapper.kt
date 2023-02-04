@@ -86,28 +86,29 @@ class StringMapper(`object`: Any?) {
             if (string == null) {
                 return null
             }
-            if (clazz == String::class.java) {
+
+            if (clazz == String::class.javaObjectType) {
                 return string
             }
-            if (clazz == Integer.TYPE || clazz == Int::class.java) {
+            if (clazz == Int::class.javaObjectType || clazz == Int::class.javaPrimitiveType) {
                 return string.toInt()
             }
-            if (clazz == java.lang.Boolean.TYPE || clazz == Boolean::class.java) {
+            if (clazz == Boolean::class.javaObjectType || clazz == Boolean::class.javaPrimitiveType) {
                 return string.toBoolean() || "t" == string || "1" == string
             }
-            if (clazz == java.lang.Double.TYPE || clazz == Double::class.java) {
+            if (clazz == Double::class.javaObjectType || clazz == Double::class.javaPrimitiveType) {
                 return string.toDouble()
             }
-            if (clazz == java.lang.Long.TYPE || clazz == Long::class.java) {
+            if (clazz == Long::class.javaObjectType || clazz == Long::class.javaPrimitiveType) {
                 return string.toLong()
             }
-            if (clazz == java.lang.Float.TYPE || clazz == Float::class.java) {
+            if (clazz == Float::class.javaObjectType || clazz == Float::class.javaPrimitiveType) {
                 return string.toFloat()
             }
-            if (clazz == Character.TYPE || clazz == Char::class.java) {
+            if (clazz == Char::class.javaObjectType || clazz == Char::class.javaPrimitiveType) {
                 return string[0]
             }
-            if (clazz == java.lang.Short.TYPE || clazz == Short::class.java) {
+            if (clazz == Short::class.javaObjectType || clazz == Short::class.javaPrimitiveType) {
                 return string.toShort()
             }
             throw UnsupportedOperationException("Cannot cast string to $clazz")
