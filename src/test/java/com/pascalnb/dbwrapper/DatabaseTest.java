@@ -17,11 +17,12 @@ public class DatabaseTest {
     @Test
     public void testQuery() {
         Assertions.assertDoesNotThrow(() -> {
-            DatabaseAction.of("SELECT version();")
-                .query(Mapper.toMapping())
-                .thenApply(StringMapper::toString)
-                .thenAccept(System.out::println)
-                .join();
+            String version = DatabaseAction.of("SELECT version();")
+                .query()
+                .map(Mapper.toMapping())
+                .map(StringMapper::toString)
+                .complete();
+            System.out.println(version);
         });
     }
 
@@ -33,15 +34,17 @@ public class DatabaseTest {
                 DatabaseAction.of("INSERT INTO test_table VALUES (?, ?)", 12, null)
             )
             .execute()
-            .join();
+            .complete();
         List<Parsable> parsables = DatabaseAction.allOf(
                 Mapper.toObjects(Parsable.class),
                 DatabaseAction.of("SELECT * FROM test_table")
             )
-            .query(l -> l.get(0))
-            .join();
+            .query()
+            .map(l -> l.get(0))
+            .complete();
         DatabaseAction.of("DROP TABLE test_table")
-            .execute();
+            .execute()
+            .complete();
         System.out.println(parsables);
         Parsable parsable = parsables.get(0);
         Assertions.assertEquals(12, parsable.getId());
