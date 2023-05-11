@@ -22,7 +22,14 @@ public interface DatabaseAction<T> {
 
     CompletedAction<Void> execute();
 
+    @Contract("_ -> new")
     DatabaseAction<T> withExecutor(Executor executor);
+
+    Executor getExecutor();
+
+    default <U> CompletedAction<U> query(Function<T, U> mapper) {
+        return query().map(mapper);
+    }
 
     @Contract(value = "_, _ -> new", pure = true)
     static <T> DatabaseAction<T> of(Query query, Mapper<T> mapper) {
@@ -40,32 +47,32 @@ public interface DatabaseAction<T> {
     }
 
     @Contract(value = "_, _, _ -> new", pure = true)
-    static <U, T> DatabaseAction<List<T>> allOf(Collection<DatabaseAction<? extends U>> actions, Function<U, T> mapper,
-        Supplier<ExecutorService> service) {
+    static <U, T> DatabaseAction<List<T>> allOf(Collection<? extends DatabaseAction<U>> actions,
+        Function<U, T> mapper, Supplier<ExecutorService> service) {
         return new MultiDatabaseAction<>(actions, mapper, DEFAULT_EXECUTOR, service);
     }
 
     @Contract(value = "_, _ -> new", pure = true)
-    static <U, T> DatabaseAction<List<T>> allOf(Collection<DatabaseAction<? extends U>> actions,
+    static <U, T> DatabaseAction<List<T>> allOf(Collection<? extends DatabaseAction<U>> actions,
         Function<U, T> mapper) {
         return allOf(actions, mapper, Executors::newSingleThreadExecutor);
     }
 
     @Contract(value = "_ -> new", pure = true)
-    static <T> DatabaseAction<List<T>> allOf(Collection<DatabaseAction<? extends T>> actions) {
+    static <T> DatabaseAction<List<T>> allOf(Collection<? extends DatabaseAction<? extends T>> actions) {
         return new MultiDatabaseAction<>(actions, Function.identity(), DEFAULT_EXECUTOR,
             Executors::newSingleThreadExecutor);
     }
 
     @Contract(value = "_, _ -> new", pure = true)
     @SafeVarargs
-    static <U, T> DatabaseAction<List<T>> allOf(Function<U, T> mapper, DatabaseAction<U>... actions) {
+    static <U, T, A extends DatabaseAction<U>> DatabaseAction<List<T>> allOf(Function<U, T> mapper, A... actions) {
         return allOf(List.of(actions), mapper, Executors::newSingleThreadExecutor);
     }
 
     @Contract(value = "_ -> new", pure = true)
     @SafeVarargs
-    static <T> DatabaseAction<List<T>> allOf(DatabaseAction<? extends T>... actions) {
+    static <T, A extends DatabaseAction<? extends T>> DatabaseAction<List<T>> allOf(A... actions) {
         return allOf(List.of(actions));
     }
 

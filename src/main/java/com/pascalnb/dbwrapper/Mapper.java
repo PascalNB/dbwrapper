@@ -16,10 +16,14 @@ import java.util.stream.Stream;
 @SuppressWarnings("unused")
 public interface Mapper<T> extends Function<Table, T> {
 
-    default Mapper<T> orDefault(T defaultValue) throws ClassCastException {
+    @SuppressWarnings("unchecked")
+    default Mapper<T> orDefault(Object defaultValue) throws ClassCastException {
         return t -> {
             T tt = this.apply(t);
-            return tt == null ? defaultValue : tt;
+            if (t == null) {
+                return defaultValue == null ? null : (T) defaultValue;
+            }
+            return tt;
         };
     }
 

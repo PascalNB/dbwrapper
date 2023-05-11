@@ -93,7 +93,7 @@ public class Table implements Iterable<Tuple> {
      * @param attributeName the attribute name
      * @return the index
      */
-    int indexOf(String attributeName) {
+    public int indexOf(String attributeName) {
         return index.getOrDefault(attributeName, -1);
     }
 
@@ -103,7 +103,7 @@ public class Table implements Iterable<Tuple> {
      * @param attributeName the name of the column
      * @return the column
      */
-    String[] getColumn(String attributeName) {
+    public String[] getColumn(String attributeName) {
         int index = indexOf(attributeName);
         return index == -1 ? new String[0] : getColumn(index);
     }

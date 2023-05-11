@@ -60,4 +60,9 @@ public class SingleDatabaseAction<T> implements DatabaseAction<T> {
         return mapper;
     }
 
+    @Override
+    public Executor getExecutor() {
+        return executor;
+    }
+
 }

@@ -15,12 +15,12 @@ import java.util.function.Supplier;
 
 public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
 
-    private final Collection<DatabaseAction<? extends B>> actions;
+    private final Collection<? extends DatabaseAction<? extends B>> actions;
     private final Function<B, T> mapper;
     private final Executor executor;
     private final Supplier<ExecutorService> serviceSupplier;
 
-    public MultiDatabaseAction(Collection<DatabaseAction<? extends B>> actions, Function<B, T> mapper,
+    public MultiDatabaseAction(Collection<? extends DatabaseAction<? extends B>> actions, Function<B, T> mapper,
         Executor executor, Supplier<ExecutorService> serviceSupplier) {
         this.actions = actions;
         this.mapper = mapper;
@@ -91,6 +91,11 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
                 database.close();
             }
         }, executor));
+    }
+
+    @Override
+    public Executor getExecutor() {
+        return executor;
     }
 
     @Override
