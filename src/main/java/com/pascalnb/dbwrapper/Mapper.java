@@ -20,7 +20,7 @@ public interface Mapper<T> extends Function<Table, T> {
     default Mapper<T> orDefault(Object defaultValue) throws ClassCastException {
         return t -> {
             T tt = this.apply(t);
-            if (t == null) {
+            if (tt == null) {
                 return defaultValue == null ? null : (T) defaultValue;
             }
             return tt;
