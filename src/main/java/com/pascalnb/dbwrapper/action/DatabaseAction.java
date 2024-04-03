@@ -18,17 +18,17 @@ public interface DatabaseAction<T> {
 
     Executor DEFAULT_EXECUTOR = r -> new Thread(r).start();
 
-    CompletedAction<T> query();
+    Promise<T> query();
 
-    CompletedAction<Void> execute();
+    Promise<Void> execute();
 
     @Contract("_ -> new")
     DatabaseAction<T> withExecutor(Executor executor);
 
     Executor getExecutor();
 
-    default <U> CompletedAction<U> query(Function<T, U> mapper) {
-        return query().map(mapper);
+    default <U> Promise<U> query(Function<T, U> mapper) {
+        return query().then(mapper);
     }
 
     @Contract(value = "_, _ -> new", pure = true)

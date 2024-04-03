@@ -18,12 +18,21 @@ public class DatabaseTest {
     public void testQuery() {
         Assertions.assertDoesNotThrow(() -> {
             String version = DatabaseAction.of("SELECT version();")
-                .query()
-                .map(Mapper.toMapping())
-                .map(StringMapper::toString)
-                .complete();
+                .query(Mapper.stringMapper())
+                .then(StringMapper::toString)
+                .await();
             System.out.println(version);
         });
+    }
+
+    @Test
+    public void testCatching() {
+        Assertions.assertEquals("error",
+            DatabaseAction.of("asdf;")
+                .query(Mapper.stringValue())
+                .catching(t -> "error")
+                .await()
+        );
     }
 
     @Test
@@ -34,17 +43,17 @@ public class DatabaseTest {
                 DatabaseAction.of("INSERT INTO test_table VALUES (?, ?)", 12, null)
             )
             .execute()
-            .complete();
+            .await();
         List<Parsable> parsables = DatabaseAction.allOf(
                 Mapper.toObjects(Parsable.class),
                 DatabaseAction.of("SELECT * FROM test_table")
             )
             .query()
-            .map(l -> l.get(0))
-            .complete();
+            .then(l -> l.get(0))
+            .await();
         DatabaseAction.of("DROP TABLE test_table")
             .execute()
-            .complete();
+            .await();
         System.out.println(parsables);
         Parsable parsable = parsables.get(0);
         Assertions.assertEquals(12, parsable.getId());

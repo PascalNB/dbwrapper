@@ -29,10 +29,10 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
     }
 
     @Override
-    public CompletedAction<List<T>> query() {
-        return new CompletedAction<>(CompletableFuture.supplyAsync(() -> {
+    public Promise<List<T>> query() {
+        return new Promise<>(CompletableFuture.supplyAsync(() -> {
             ExecutorService service = serviceSupplier.get();
-            List<CompletedAction<? extends B>> futures = new ArrayList<>();
+            List<Promise<? extends B>> futures = new ArrayList<>();
             Database database = Database.getInstance().connect();
 
             try {
@@ -45,7 +45,7 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
                             return singleDatabaseAction.getMapper().apply(reference.get());
                         }, service);
 
-                        futures.add(new CompletedAction<>(future));
+                        futures.add(new Promise<>(future));
                     } else {
                         futures.add(action.withExecutor(service).query());
                     }
@@ -53,7 +53,7 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
 
                 List<T> result = new ArrayList<>();
                 for (var future : futures) {
-                    result.add(mapper.apply(future.complete()));
+                    result.add(mapper.apply(future.await()));
                 }
 
                 return result;
@@ -65,10 +65,10 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
     }
 
     @Override
-    public CompletedAction<Void> execute() {
-        return new CompletedAction<>(CompletableFuture.runAsync(() -> {
+    public Promise<Void> execute() {
+        return new Promise<>(CompletableFuture.runAsync(() -> {
             ExecutorService service = serviceSupplier.get();
-            List<CompletedAction<Void>> futures = new ArrayList<>();
+            List<Promise<Void>> futures = new ArrayList<>();
             Database database = Database.getInstance().connect();
             try {
                 for (var action : actions) {
@@ -77,14 +77,14 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
                             database.executeStatement(singleDatabaseAction.getQuery());
                             return null;
                         }, service);
-                        futures.add(new CompletedAction<>(future));
+                        futures.add(new Promise<>(future));
                     } else {
                         futures.add(action.withExecutor(service).execute());
                     }
                 }
 
                 for (var future : futures) {
-                    future.complete();
+                    future.await();
                 }
             } finally {
                 service.shutdown();

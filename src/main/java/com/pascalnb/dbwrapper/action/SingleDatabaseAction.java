@@ -22,8 +22,8 @@ public class SingleDatabaseAction<T> implements DatabaseAction<T> {
     }
 
     @Override
-    public CompletedAction<T> query() {
-        return new CompletedAction<>(CompletableFuture.supplyAsync(() -> {
+    public Promise<T> query() {
+        return new Promise<>(CompletableFuture.supplyAsync(() -> {
             AtomicReference<Table> reference = new AtomicReference<>();
             Database database = Database.getInstance().connect();
             try {
@@ -36,8 +36,8 @@ public class SingleDatabaseAction<T> implements DatabaseAction<T> {
     }
 
     @Override
-    public CompletedAction<Void> execute() {
-        return new CompletedAction<>(CompletableFuture.runAsync(() -> {
+    public Promise<Void> execute() {
+        return new Promise<>(CompletableFuture.runAsync(() -> {
             Database database = Database.getInstance().connect();
             try {
                 database.executeStatement(query);

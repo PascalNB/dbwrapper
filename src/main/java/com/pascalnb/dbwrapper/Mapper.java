@@ -132,13 +132,13 @@ public interface Mapper<T> extends Function<Table, T> {
      * @return a new mapper
      */
     @Contract(pure = true)
-    static Mapper<StringMapper> toMapping() {
+    static Mapper<StringMapper> stringMapper() {
         return singleNullableValue(StringMapper::new);
     }
 
     @Contract(pure = true)
     static <T> Mapper<T> toPrimitive(Class<? extends T> clazz) {
-        return t -> toMapping().apply(t).to(clazz);
+        return t -> stringMapper().apply(t).to(clazz);
     }
 
     @Contract(pure = true)
