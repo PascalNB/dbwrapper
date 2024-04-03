@@ -53,7 +53,7 @@ A database query can be made as follows:
 ```java
 String version = DatabaseAction.of("SELECT version();")
     .query(Mapper.stringValue())
-    .join();
+    .await();
 
 System.out.println(version);
 ```
@@ -63,7 +63,7 @@ This can also be done asynchronously:
 ```java
 DatabaseAction.of("SELECT version();")
     .query(Mapper.stringValue())
-    .thenAccept(System.out::println);
+    .async(System.out::println);
 ```
 
 Query arguments can be added as follows:
@@ -71,7 +71,7 @@ Query arguments can be added as follows:
 ```java
 DatabaseAction.of("SELECT * FROM users WHERE id=?;", 154)
     .query(Mapper.firstRow())
-    .thenAccept(row -> {
+    .async(row -> {
         if (row == null) {
             return;
         }
@@ -86,12 +86,12 @@ Reusing existing queries with different arguments:
 Query query = new Query("SELECT * FROM users WHERE id=?;");
 DatabaseAction.of(query.withArgs(154))
     .query(Mapper.firstRow())
-    .thenAccept(row -> {
+    .async(row -> {
         // do stuff
     });
 DatabaseAction.of(query.withArgs(451))
     .query(Mapper.firstRow())
-    .thenAccept(row -> {
+    .async(row -> {
         // do stuff
     });
 ```
@@ -105,6 +105,14 @@ DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
     .execute();
 ```
 
+Awaiting execution:
+
+```java
+DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
+    .execute()
+    .await;
+```
+
 ## Value Mapping
 
 Returned values can be mapped to primitives:
@@ -112,7 +120,7 @@ Returned values can be mapped to primitives:
 ```java
 int count = DatabaseAction.of("SELECT count(*) FROM users")
     .query(Mapper.toPrimitive(Integer.class)) // or Integer.TYPE
-    .join();
+    .await();
 ```
 
 They can also be mapped to objects with the `ParseField` annotation:
@@ -120,11 +128,11 @@ They can also be mapped to objects with the `ParseField` annotation:
 ```java
 User user = DatabaseAction.of("SELECT id, username FROM users WHERE id=?", 154)
     .query(Mapper.toObject(User.class))
-    .join();
+    .await();
 
 List<User> users = DatabaseAction.of("SELECT id, username FROM users WHERE username=?", "username")
     .query(Mapper.toObjects(User.class))
-    .join();
+    .await();
 ```
 
 Given the following class:
@@ -178,7 +186,7 @@ DatabaseAction.allOf(
         DatabaseAction.of("SELECT * FROM users WHERE username=?;", "username")
     )
     .query()
-    .thenAccept(list -> {
+    .await(list -> {
         for (User user : list) {
             // do stuff
         }
