@@ -110,7 +110,7 @@ Awaiting execution:
 ```java
 DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
     .execute()
-    .await;
+    .await();
 ```
 
 ## Value Mapping
