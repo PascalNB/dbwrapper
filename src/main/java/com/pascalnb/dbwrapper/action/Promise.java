@@ -32,8 +32,9 @@ public class Promise<T> {
         return supplier.get();
     }
 
-    public CompletableFuture<T> stage() {
-        return CompletableFuture.supplyAsync(supplier, executor);
+    public Promise<T> stage() {
+        CompletableFuture<T> future = CompletableFuture.supplyAsync(supplier, executor);
+        return new StagedPromise<>(future);
     }
 
     public <U> Promise<U> map(Function<T, U> function) {
