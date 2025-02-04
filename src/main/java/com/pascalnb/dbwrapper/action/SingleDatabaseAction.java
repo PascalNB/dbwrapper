@@ -48,6 +48,11 @@ public class SingleDatabaseAction<T> implements DatabaseAction<T> {
     }
 
     @Override
+    public <U> DatabaseAction<U> mapping(Function<T, U> mapper) {
+        return new SingleDatabaseAction<>(query, this.mapper.andThen(mapper), executor);
+    }
+
+    @Override
     public DatabaseAction<T> withExecutor(Executor executor) {
         return new SingleDatabaseAction<>(query, mapper, executor);
     }

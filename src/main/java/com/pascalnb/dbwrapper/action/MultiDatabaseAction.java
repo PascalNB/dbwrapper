@@ -13,14 +13,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
+public class MultiDatabaseAction<B, T> implements DatabaseAction<T> {
 
     private final Collection<? extends DatabaseAction<? extends B>> actions;
-    private final Function<B, T> mapper;
+    private final Function<List<B>, T> mapper;
     private final Executor executor;
     private final Supplier<ExecutorService> serviceSupplier;
 
-    public MultiDatabaseAction(Collection<? extends DatabaseAction<? extends B>> actions, Function<B, T> mapper,
+    public MultiDatabaseAction(Collection<? extends DatabaseAction<? extends B>> actions,
+        Function<List<B>, T> mapper,
         Executor executor, Supplier<ExecutorService> serviceSupplier) {
         this.actions = actions;
         this.mapper = mapper;
@@ -29,7 +30,7 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
     }
 
     @Override
-    public Promise<List<T>> query() {
+    public Promise<T> query() {
         return new Promise<>(CompletableFuture.supplyAsync(() -> {
             ExecutorService service = serviceSupplier.get();
             List<Promise<? extends B>> futures = new ArrayList<>();
@@ -51,12 +52,12 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
                     }
                 }
 
-                List<T> result = new ArrayList<>();
+                List<B> result = new ArrayList<>();
                 for (var future : futures) {
-                    result.add(mapper.apply(future.await()));
+                    result.add(future.await());
                 }
 
-                return result;
+                return mapper.apply(result);
             } finally {
                 service.shutdown();
                 database.close();
@@ -94,12 +95,17 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<List<T>> {
     }
 
     @Override
+    public <U> DatabaseAction<U> mapping(Function<T, U> mapper) {
+        return new MultiDatabaseAction<>(actions, this.mapper.andThen(mapper), executor, serviceSupplier);
+    }
+
+    @Override
     public Executor getExecutor() {
         return executor;
     }
 
     @Override
-    public DatabaseAction<List<T>> withExecutor(Executor executor) {
+    public DatabaseAction<T> withExecutor(Executor executor) {
         return new MultiDatabaseAction<>(actions, mapper, executor, serviceSupplier);
     }
 

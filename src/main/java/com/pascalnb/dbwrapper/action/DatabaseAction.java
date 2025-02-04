@@ -5,6 +5,7 @@ import com.pascalnb.dbwrapper.Query;
 import com.pascalnb.dbwrapper.Table;
 import org.jetbrains.annotations.Contract;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -26,6 +27,8 @@ public interface DatabaseAction<T> {
     DatabaseAction<T> withExecutor(Executor executor);
 
     Executor getExecutor();
+
+    <U> DatabaseAction<U> mapping(Function<T, U> mapper);
 
     default <U> Promise<U> query(Function<T, U> mapper) {
         return query().then(mapper);
@@ -49,7 +52,14 @@ public interface DatabaseAction<T> {
     @Contract(value = "_, _, _ -> new", pure = true)
     static <U, T> DatabaseAction<List<T>> allOf(Collection<? extends DatabaseAction<U>> actions,
         Function<U, T> mapper, Supplier<ExecutorService> service) {
-        return new MultiDatabaseAction<>(actions, mapper, DEFAULT_EXECUTOR, service);
+        Function<List<U>, List<T>> newMapper = l -> {
+            List<T> result = new ArrayList<>();
+            for (U u : l) {
+                result.add(mapper.apply(u));
+            }
+            return result;
+        };
+        return new MultiDatabaseAction<>(actions, newMapper, DEFAULT_EXECUTOR, service);
     }
 
     @Contract(value = "_, _ -> new", pure = true)
