@@ -1,8 +1,5 @@
 package com.pascalnb.dbwrapper;
 
-import org.jetbrains.annotations.Contract;
-
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -41,11 +38,26 @@ public abstract class Database {
     }
 
     /**
-     * Connects the database.Database object to the database.
+     * Connects the database object to the database with auto commit enabled.
      *
      * @return the same [Database]
      */
     public abstract Database connect();
+
+    /**
+     * Connects the database object.
+     *
+     * @param autoCommit auto commit
+     * @return the same [Database]
+     */
+    public abstract Database connect(boolean autoCommit);
+
+    /**
+     * Commits all changes.
+     *
+     * @return the same [Database]
+     */
+    public abstract Database commit();
 
     /**
      * @throws DatabaseException if this [Database] instance is not connected to a database.
@@ -55,21 +67,17 @@ public abstract class Database {
     /**
      * Queries a prepared statement on the database.
      *
-     * @param callback the consumer that accepts the result from the database
-     * @param query    the prepared query
-     * @return the same [Database]
+     * @param query the prepared query
+     * @return the database result
      */
-    @Contract("_, _ -> this")
-    public abstract Database queryStatement(Consumer<Table> callback, Query query);
+    public abstract Table queryStatement(Query query);
 
     /**
      * Executes a prepared statement on the database.
      *
      * @param query the prepared statement
-     * @return the same [Database]
      */
-    @Contract("_ -> this")
-    public abstract Database executeStatement(Query query);
+    public abstract void executeStatement(Query query);
 
     /**
      * Closes the connection to the database.

@@ -1,32 +1,62 @@
 package com.pascalnb.dbwrapper.action;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 @SuppressWarnings("unused")
 public class Promise<T> {
 
-    private final CompletableFuture<T> future;
+    private final Supplier<T> supplier;
+    private final Executor executor;
 
-    protected Promise(CompletableFuture<T> future) {
-        this.future = future;
+    protected Promise(Supplier<T> supplier, Executor executor) {
+        this.supplier = supplier;
+        this.executor = executor;
     }
 
     public void async(Consumer<T> consumer) {
-        future.thenAccept(consumer);
+        CompletableFuture.runAsync(
+            () -> consumer.accept(supplier.get()),
+            this.executor
+        );
+    }
+
+    public void async() {
+        async(result -> {});
     }
 
     public T await() {
-        return future.join();
+        return supplier.get();
     }
 
-    public <U> Promise<U> then(Function<T, U> function) {
-        return new Promise<>(future.thenApply(function));
+    public CompletableFuture<T> stage() {
+        return CompletableFuture.supplyAsync(supplier, executor);
+    }
+
+    public <U> Promise<U> map(Function<T, U> function) {
+        return new Promise<>(() -> function.apply(supplier.get()), executor);
+    }
+
+    public Promise<Void> consume(Consumer<T> consumer) {
+        return new Promise<>(() -> {
+            consumer.accept(supplier.get());
+            return null;
+        }, executor);
     }
 
     public Promise<T> catching(Function<Throwable, ? extends T> function) {
-        return new Promise<>(future.exceptionally(function));
+        return new Promise<>(
+            () -> {
+                try {
+                    return supplier.get();
+                } catch (Throwable e) {
+                    return function.apply(e);
+                }
+            },
+            executor);
     }
 
 }

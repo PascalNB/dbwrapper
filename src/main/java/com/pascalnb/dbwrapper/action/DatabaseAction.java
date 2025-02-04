@@ -31,7 +31,7 @@ public interface DatabaseAction<T> {
     <U> DatabaseAction<U> mapping(Function<T, U> mapper);
 
     default <U> Promise<U> query(Function<T, U> mapper) {
-        return query().then(mapper);
+        return query().map(mapper);
     }
 
     @Contract(value = "_, _ -> new", pure = true)

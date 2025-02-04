@@ -26,12 +26,11 @@ public abstract class DatabaseAuthenticator {
 
         Database.setUsername(credentials[0]);
         Database.setPassword(credentials[1]);
-        if (credentials[2] == null) {
+        if (credentials[2] == null || credentials[2].isBlank()) {
             invalidate();
-            throw new DatabaseException("url cannot be null");
+            throw new DatabaseException("URL cannot be null or blank");
         }
         Database.setUrl(credentials[2]);
-
         Database.getInstance().connect().close();
     }
 

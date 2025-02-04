@@ -102,7 +102,8 @@ Executing without response:
 
 ```java
 DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
-    .execute();
+    .execute()
+    .async();
 ```
 
 Awaiting execution:
@@ -110,7 +111,7 @@ Awaiting execution:
 ```java
 DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
     .execute()
-    .await;
+    .await();
 ```
 
 ## Value Mapping
@@ -165,12 +166,14 @@ Select what executor to use the database actions on:
 ExecutorService executorService = Executors.newFixedThreadPool(10);
 DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
     .withExecutor(executorService)
-    .execute();
+    .execute()
+    .async();
 
 // run on current thread
 DatabaseAction.of("DELETE FROM users WHERE id=?;", 154)
     .withExecutor(Runnable::run)
-    .execute();
+    .execute()
+    .async();
 ```
 
 ## Combining database actions
@@ -186,7 +189,7 @@ DatabaseAction.allOf(
         DatabaseAction.of("SELECT * FROM users WHERE username=?;", "username")
     )
     .query()
-    .await(list -> {
+    .async(list -> {
         for (User user : list) {
             // do stuff
         }

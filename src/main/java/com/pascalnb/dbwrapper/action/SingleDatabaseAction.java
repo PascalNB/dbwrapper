@@ -4,9 +4,7 @@ import com.pascalnb.dbwrapper.Database;
 import com.pascalnb.dbwrapper.Query;
 import com.pascalnb.dbwrapper.Table;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 public class SingleDatabaseAction<T> implements DatabaseAction<T> {
@@ -23,28 +21,29 @@ public class SingleDatabaseAction<T> implements DatabaseAction<T> {
 
     @Override
     public Promise<T> query() {
-        return new Promise<>(CompletableFuture.supplyAsync(() -> {
-            AtomicReference<Table> reference = new AtomicReference<>();
+        return new Promise<>(() -> {
+            Table table;
             Database database = Database.getInstance().connect();
             try {
-                database.queryStatement(reference::set, query);
-                return mapper.apply(reference.get());
+                table = database.queryStatement(query);
             } finally {
                 database.close();
             }
-        }, executor));
+            return mapper.apply(table);
+        }, executor);
     }
 
     @Override
     public Promise<Void> execute() {
-        return new Promise<>(CompletableFuture.runAsync(() -> {
+        return new Promise<>(() -> {
             Database database = Database.getInstance().connect();
             try {
                 database.executeStatement(query);
             } finally {
                 database.close();
             }
-        }, executor));
+            return null;
+        }, executor);
     }
 
     @Override

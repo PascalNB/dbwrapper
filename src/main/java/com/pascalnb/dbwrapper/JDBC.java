@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Contract;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * The JDBC implementation of [Database].
@@ -15,19 +14,34 @@ class JDBC extends Database {
     private static final int FETCH_SIZE = 500;
 
     private Connection connection = null;
-    private Statement statement = null;
 
-    @Contract("-> this")
+    @Contract("_ -> this")
     @Override
-    public Database connect() {
+    public Database connect(boolean autoCommit) {
         if (getUrl() == null) {
             throw new DatabaseException("URL for database connection not set.");
         }
         try {
             connection = DriverManager.getConnection(getUrl(), getUsername(), getPassword());
             connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
-            connection.setAutoCommit(false);
-            statement = connection.createStatement();
+            connection.setAutoCommit(autoCommit);
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
+        }
+        return this;
+    }
+
+    @Contract("-> this")
+    @Override
+    public Database connect() {
+        return connect(true);
+    }
+
+    @Override
+    public Database commit() {
+        checkConnection();
+        try {
+            connection.commit();
         } catch (SQLException e) {
             throw new DatabaseException(e);
         }
@@ -36,7 +50,7 @@ class JDBC extends Database {
 
     @Override
     protected void checkConnection() throws DatabaseException {
-        if (connection == null || statement == null) {
+        if (connection == null) {
             throw new DatabaseException("No connection to the database exists or it has already been closed.");
         }
     }
@@ -80,46 +94,40 @@ class JDBC extends Database {
     }
 
     @Override
-    public Database queryStatement(Consumer<Table> callback, Query query) {
+    public Table queryStatement(Query query) {
         checkConnection();
         try {
-            callback.accept(
-                parseResult(
-                    setVariables(
-                        connection.prepareStatement(query.toString()),
-                        query.getArgs()
-                    ).executeQuery()
-                )
+            return parseResult(
+                setVariables(
+                    connection.prepareStatement(query.toString()),
+                    query.getArgs()
+                ).executeQuery()
             );
         } catch (SQLException e) {
             throw new DatabaseException(e);
         }
-        return this;
     }
 
     @Override
-    public Database executeStatement(Query query) {
+    public void executeStatement(Query query) {
         checkConnection();
         try {
             setVariables(connection.prepareStatement(query.toString()), query.getArgs()).execute();
         } catch (SQLException e) {
             throw new DatabaseException(e);
         }
-        return this;
     }
 
     @Override
     public void close() {
         checkConnection();
         try {
-            connection.commit();
-            connection.setAutoCommit(true);
             connection.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DatabaseException(e);
+        } finally {
+            connection = null;
         }
-        connection = null;
-        statement = null;
     }
 
     // specific implementation to parse a ResultSet to a Table

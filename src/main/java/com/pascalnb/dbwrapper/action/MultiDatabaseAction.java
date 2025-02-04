@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -31,67 +30,74 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<T> {
 
     @Override
     public Promise<T> query() {
-        return new Promise<>(CompletableFuture.supplyAsync(() -> {
-            ExecutorService service = serviceSupplier.get();
-            List<Promise<? extends B>> futures = new ArrayList<>();
-            Database database = Database.getInstance().connect();
-
-            try {
-                for (var action : actions) {
-                    if (action instanceof SingleDatabaseAction<? extends B> singleDatabaseAction) {
-
-                        CompletableFuture<? extends B> future = CompletableFuture.supplyAsync(() -> {
-                            AtomicReference<Table> reference = new AtomicReference<>();
-                            database.queryStatement(reference::set, singleDatabaseAction.getQuery());
-                            return singleDatabaseAction.getMapper().apply(reference.get());
-                        }, service);
-
-                        futures.add(new Promise<>(future));
-                    } else {
-                        futures.add(action.withExecutor(service).query());
-                    }
-                }
-
+        return new Promise<>(
+            () -> {
+                ExecutorService service = serviceSupplier.get();
+                List<CompletableFuture<? extends B>> futures = new ArrayList<>();
+                Database database = Database.getInstance().connect();
                 List<B> result = new ArrayList<>();
-                for (var future : futures) {
-                    result.add(future.await());
+
+                try {
+                    for (var action : actions) {
+                        if (action instanceof SingleDatabaseAction<? extends B> singleDatabaseAction) {
+
+                            Supplier<? extends B> future = () -> {
+                                Table table = database.queryStatement(singleDatabaseAction.getQuery());
+                                return singleDatabaseAction.getMapper().apply(table);
+                            };
+
+                            futures.add(new Promise<>(future, service).stage());
+                        } else {
+                            futures.add(action.withExecutor(service).query().stage());
+                        }
+                    }
+
+                    for (var future : futures) {
+                        result.add(future.join());
+                    }
+
+                } finally {
+                    service.shutdown();
+                    database.close();
                 }
 
                 return mapper.apply(result);
-            } finally {
-                service.shutdown();
-                database.close();
-            }
-        }, executor));
+            },
+            executor
+        );
     }
 
     @Override
     public Promise<Void> execute() {
-        return new Promise<>(CompletableFuture.runAsync(() -> {
-            ExecutorService service = serviceSupplier.get();
-            List<Promise<Void>> futures = new ArrayList<>();
-            Database database = Database.getInstance().connect();
-            try {
-                for (var action : actions) {
-                    if (action instanceof SingleDatabaseAction<? extends B> singleDatabaseAction) {
-                        CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> {
-                            database.executeStatement(singleDatabaseAction.getQuery());
-                            return null;
-                        }, service);
-                        futures.add(new Promise<>(future));
-                    } else {
-                        futures.add(action.withExecutor(service).execute());
-                    }
-                }
+        return new Promise<>(
+            () -> {
+                ExecutorService service = serviceSupplier.get();
+                List<CompletableFuture<Void>> futures = new ArrayList<>();
+                Database database = Database.getInstance().connect();
 
-                for (var future : futures) {
-                    future.await();
+                try {
+                    for (var action : actions) {
+                        if (action instanceof SingleDatabaseAction<? extends B> singleDatabaseAction) {
+                            Supplier<Void> future = () -> {
+                                database.executeStatement(singleDatabaseAction.getQuery());
+                                return null;
+                            };
+                            futures.add(new Promise<>(future, service).stage());
+                        } else {
+                            futures.add(action.withExecutor(service).execute().stage());
+                        }
+                    }
+
+                    for (var future : futures) {
+                        future.join();
+                    }
+                } finally {
+                    service.shutdown();
+                    database.close();
                 }
-            } finally {
-                service.shutdown();
-                database.close();
-            }
-        }, executor));
+                return null;
+            },
+            executor);
     }
 
     @Override
