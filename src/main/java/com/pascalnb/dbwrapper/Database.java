@@ -53,25 +53,6 @@ public abstract class Database {
     protected abstract void checkConnection() throws DatabaseException;
 
     /**
-     * Executes a query without receiving data back.
-     *
-     * @param query the query to be executed
-     * @return the same [Database]
-     */
-    @Contract("_ -> this")
-    public abstract Database execute(Query query);
-
-    /**
-     * Executes an SQL query on the database.
-     *
-     * @param callback the consumer that accepts the result from the database
-     * @param query    the query
-     * @return the same [Database]
-     */
-    @Contract("_, _ -> this")
-    public abstract Database query(Consumer<Table> callback, Query query);
-
-    /**
      * Queries a prepared statement on the database.
      *
      * @param callback the consumer that accepts the result from the database

@@ -41,31 +41,6 @@ class JDBC extends Database {
         }
     }
 
-    @Contract("_ -> this")
-    @Override
-    public Database execute(Query query) {
-        checkConnection();
-        try {
-            statement.execute(query.toString());
-        } catch (SQLException e) {
-            throw new DatabaseException(e);
-        }
-        return this;
-    }
-
-    @Contract("_, _ -> this")
-    @Override
-    public Database query(Consumer<Table> callback, Query query) {
-        checkConnection();
-        try {
-            statement.setFetchSize(FETCH_SIZE);
-            callback.accept(parseResult(statement.executeQuery(query.toString())));
-        } catch (SQLException e) {
-            throw new DatabaseException(e);
-        }
-        return this;
-    }
-
     @Contract("_, _ -> param1")
     private PreparedStatement setVariables(PreparedStatement statement, Object... variables) {
         try {
