@@ -6,7 +6,6 @@ import com.pascalnb.dbwrapper.Table;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
@@ -33,7 +32,7 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<T> {
         return new Promise<>(
             () -> {
                 ExecutorService service = serviceSupplier.get();
-                List<CompletableFuture<? extends B>> futures = new ArrayList<>();
+                List<Promise<? extends B>> promises = new ArrayList<>();
                 Database database = Database.getInstance().connect();
                 List<B> result = new ArrayList<>();
 
@@ -41,19 +40,19 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<T> {
                     for (var action : actions) {
                         if (action instanceof SingleDatabaseAction<? extends B> singleDatabaseAction) {
 
-                            Supplier<? extends B> future = () -> {
+                            Supplier<? extends B> supplier = () -> {
                                 Table table = database.queryStatement(singleDatabaseAction.getQuery());
                                 return singleDatabaseAction.getMapper().apply(table);
                             };
 
-                            futures.add(new Promise<>(future, service).stage());
+                            promises.add(new Promise<>(supplier, service).stage());
                         } else {
-                            futures.add(action.withExecutor(service).query().stage());
+                            promises.add(action.withExecutor(service).query().stage());
                         }
                     }
 
-                    for (var future : futures) {
-                        result.add(future.join());
+                    for (var future : promises) {
+                        result.add(future.await());
                     }
 
                 } finally {
@@ -72,24 +71,24 @@ public class MultiDatabaseAction<B, T> implements DatabaseAction<T> {
         return new Promise<>(
             () -> {
                 ExecutorService service = serviceSupplier.get();
-                List<CompletableFuture<Void>> futures = new ArrayList<>();
+                List<Promise<Void>> promises = new ArrayList<>();
                 Database database = Database.getInstance().connect();
 
                 try {
                     for (var action : actions) {
                         if (action instanceof SingleDatabaseAction<? extends B> singleDatabaseAction) {
-                            Supplier<Void> future = () -> {
+                            Supplier<Void> supplier = () -> {
                                 database.executeStatement(singleDatabaseAction.getQuery());
                                 return null;
                             };
-                            futures.add(new Promise<>(future, service).stage());
+                            promises.add(new Promise<>(supplier, service).stage());
                         } else {
-                            futures.add(action.withExecutor(service).execute().stage());
+                            promises.add(action.withExecutor(service).execute().stage());
                         }
                     }
 
-                    for (var future : futures) {
-                        future.join();
+                    for (var future : promises) {
+                        future.await();
                     }
                 } finally {
                     service.shutdown();
