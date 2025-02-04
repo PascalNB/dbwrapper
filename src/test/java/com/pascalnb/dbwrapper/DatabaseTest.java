@@ -19,7 +19,7 @@ public class DatabaseTest {
         Assertions.assertDoesNotThrow(() -> {
             String version = DatabaseAction.of("SELECT version();")
                 .query(Mapper.stringMapper())
-                .then(StringMapper::toString)
+                .map(StringMapper::toString)
                 .await();
             System.out.println(version);
         });
@@ -49,7 +49,7 @@ public class DatabaseTest {
                 DatabaseAction.of("SELECT * FROM test_table")
             )
             .query()
-            .then(l -> l.get(0))
+            .map(l -> l.get(0))
             .await();
         DatabaseAction.of("DROP TABLE test_table")
             .execute()
