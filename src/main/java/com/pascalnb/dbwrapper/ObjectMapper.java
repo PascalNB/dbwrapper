@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ObjectMapper<T> implements Mapper<T> {
@@ -59,7 +60,18 @@ public class ObjectMapper<T> implements Mapper<T> {
     }
 
     public List<T> applyAll(Table table) {
-        return table.stream().map(this::rowToInstance).toList();
+        if (table.isEmpty()) {
+            return List.of();
+        }
+        List<T> result = new ArrayList<>(table.getRowCount());
+        for (Tuple row : table) {
+            result.add(rowToInstance(row));
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    public Mapper<List<T>> all() {
+        return this::applyAll;
     }
 
     @Override

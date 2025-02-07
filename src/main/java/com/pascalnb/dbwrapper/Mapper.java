@@ -38,6 +38,14 @@ public interface Mapper<T> extends Function<Table, T> {
         return singleValue(Function.identity());
     }
 
+    static Mapper<String> stringValue(String column) {
+        return singleValue(column, Function.identity());
+    }
+
+    static Mapper<String> stringValue(int index) {
+        return singleValue(index, Function.identity());
+    }
+
     /**
      * Returns a mapper that will map the string value at (0,0) of the table to a value of type T based on the given
      * map function.
@@ -51,6 +59,14 @@ public interface Mapper<T> extends Function<Table, T> {
     @Contract(pure = true)
     static <T> Mapper<T> singleValue(Function<String, T> mapper) {
         return t -> t.isEmpty() ? null : mapper.apply(t.get(0).get(0));
+    }
+
+    static <T> Mapper<T> singleValue(String column, Function<String, T> mapper) {
+        return t -> t.isEmpty() ? null : mapper.apply(t.get(0).get(column));
+    }
+
+    static <T> Mapper<T> singleValue(int index, Function<String, T> mapper) {
+        return t -> t.isEmpty() ? null : mapper.apply(t.get(0).get(index));
     }
 
     /**
@@ -68,6 +84,14 @@ public interface Mapper<T> extends Function<Table, T> {
         return t -> mapper.apply(stringValue().apply(t));
     }
 
+    static <T> Mapper<T> singleNullableValue(String column, Function<String, T> mapper) {
+        return t -> mapper.apply(stringValue(column).apply(t));
+    }
+
+    static <T> Mapper<T> singleNullableValue(int index, Function<String, T> mapper) {
+        return t -> mapper.apply(stringValue(index).apply(t));
+    }
+
     /**
      * Returns a mapper that will map a resulting table to a list of string values.
      * <br></br><br></br>
@@ -78,6 +102,14 @@ public interface Mapper<T> extends Function<Table, T> {
      */
     static Mapper<List<String>> stringList() {
         return valueList(Function.identity());
+    }
+
+    static Mapper<List<String>> stringList(String column) {
+        return valueList(column, Function.identity());
+    }
+
+    static Mapper<List<String>> stringList(int index) {
+        return valueList(index, Function.identity());
     }
 
     /**
@@ -92,13 +124,34 @@ public interface Mapper<T> extends Function<Table, T> {
      */
     @Contract(pure = true)
     static <T> Mapper<List<T>> valueList(Function<String, T> mapper) {
+        return valueList(0, mapper);
+    }
+
+    static <T> Mapper<List<T>> valueList(String column, Function<String, T> mapper) {
+        return t -> valueList(t.indexOf(column), mapper).apply(t);
+    }
+
+    static <T> Mapper<List<T>> valueList(int index, Function<String, T> mapper) {
         return t -> {
             if (t.isEmpty()) {
                 return List.of();
             }
-            List<T> list = new ArrayList<>();
+            List<T> list = new ArrayList<>(t.getRowCount());
             for (Tuple tuple : t) {
-                list.add(mapper.apply(tuple.get(0)));
+                list.add(mapper.apply(tuple.get(index)));
+            }
+            return Collections.unmodifiableList(list);
+        };
+    }
+
+    static <T> Mapper<List<T>> objectList(Function<Tuple, T> mapper) {
+        return t -> {
+            if (t.isEmpty()) {
+                return List.of();
+            }
+            List<T> list = new ArrayList<>(t.getRowCount());
+            for (Tuple tuple : t) {
+                list.add(mapper.apply(tuple));
             }
             return Collections.unmodifiableList(list);
         };
@@ -148,7 +201,7 @@ public interface Mapper<T> extends Function<Table, T> {
 
     @Contract(pure = true)
     static <T> Mapper<List<T>> toObjects(Class<T> clazz) {
-        return t -> new ObjectMapper<>(clazz).applyAll(t);
+        return new ObjectMapper<>(clazz).all();
     }
 
     @Contract(pure = true)
